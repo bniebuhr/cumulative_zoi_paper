@@ -1,0 +1,78 @@
+---
+title: "Simulate responses"
+author: "Bernardo Niebuhr"
+date: "11/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load_packages}
+#Load packages
+library(mobsim)
+library(raster)
+library(ZOItools)
+library(sf)
+library(boot)
+```
+
+
+## Simulate a landscape
+
+First we simulate a landscape, using point-type infrastructure as an example.
+
+```{r simulate_landscapes}
+set.seed(1234)
+
+# multiple focii
+ext <- 30000
+wd <- 0.1*ext
+scales <- c(250, 500, 1000, 2500, 5000)/2
+rasts <- simulate_dist_dens(n_features = 1000, centers = 5,
+                            width = wd, res = 100,
+                            extent_x = c(0, ext), extent_y = c(0, ext),
+                            buffer_around = 10000,
+                            type_density = "Gauss", scale = scales,
+                            extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+plot(rasts)
+```
+
+## Create a response
+
+Now we wish to simulate a response using this landscape. We'll consider a logistic response in the format
+
+\begin{align*}
+y_i \sim {\sf Binom}(p_i) \\
+logit(p_i) = log \left( \frac{p_1}{1 - p_i} \right) = \beta_{0i} + \beta_1 \cdot x_{1i} + \beta_2 \cdot x_{2i}
+\end{align*}
+
+where $y_i$ is the response variable (1 = used and 0 = available in the context of habitat suitability modeling), 
+$x_{1i}$ is a first variable independent from the space (added here just to consider one other factor of influence on
+the output), $x_{2i}$ is either the `density` (the density of features) or `log(distance)` (the distance to the nearest feature), 
+and $\beta_0$, $\beta_1$, and $\beta_2$ are the coefficients of the equation.
+
+We'll simulate two scenarios. In the first one we set `log(distance)` as the variable generating the data and in the second one we set `density` as the variable generating the data. In each case, we then fit models considering each variable and we compare and interpret the results.
+
+```{r}
+n <- 500
+beta <- c(2, 1, .5)
+x1 <- runif(n)
+
+coords <- rbind(c(0,0),c(ext,0),c(ext,ext),c(0,ext),c(0,0))
+pts <- st_sf(st_sample(st_sfc(st_polygon(list(coords))), n))
+
+vars <- raster::extract(rasts, pts)
+vars[, "distance"] <- log(vars[, "distance"])
+head(vars)
+
+# simulate
+x2 <- vars[,1] # dist
+logit_p = beta[1] + (beta[2]*x1) + (beta[3]*x2)
+y <- rbinom(n, 1, inv.logit(logit_p))
+
+dat <- data.frame(x1, x2, y)
+```
+
