@@ -51,7 +51,7 @@ First we simulate some landscape using point-type infrastructure as an example. 
 ```{r load_packages, message=FALSE, warning=FALSE}
 #Load packages
 library(dplyr)
-library(ggplot27y)
+library(ggplot2)
 library(mobsim)
 library(raster)
 library(rasterVis)
@@ -77,6 +77,10 @@ pts <- set_points(n_features = 1000, centers = nc,
                   width = wd, res = 100,
                   extent_x = c(0, ext), extent_y = c(0, ext))
 plot(pts$rast, col = "black", legend = F)
+
+# mean distance
+pts$pts %>% pointDistance(lonlat = F) %>% as.dist() %>% mean
+mean(dist(pts$pts))
 ```
 
 We can now simulate landscapes with different patterns. For now we'll keep the total number of features constant.
