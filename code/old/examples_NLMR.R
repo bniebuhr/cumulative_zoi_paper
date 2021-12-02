@@ -142,7 +142,7 @@ nlm_mpd_seed <- function(user_seed = 123, ...) {
   NLMR::nlm_mpd(...)
 }
 
-nlm_list = param_df %>% pmap(nlm_mpd_seed, user_seed = 123)
+nlm_list <- param_df %>% pmap(nlm_mpd_seed, user_seed = 123)
 names(nlm_list) <- param_df$roughness
 
 # plot

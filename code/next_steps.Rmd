@@ -1,0 +1,30 @@
+---
+title: "Next steps"
+author: ""
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+---
+
+
+## Simulate landscape patterns
+
+- Implement function to calculate distance through GRASS
+
+- Implement function to calculate density through GRASS, using r.mfilter and r.resamp.filter
+
+- Implement exp decay distance - OK!
+
+- Calculate distance between points - OK!
+
+- Set a reasonable set of landscapes to tell a history: from random to clustered, plus regular
+
+- Simulate points and check correlation
+
+- See best form to represent this (using dist_points, or ZOI, or what)
+
+## Re-do analysis for reindeer GPS points
+

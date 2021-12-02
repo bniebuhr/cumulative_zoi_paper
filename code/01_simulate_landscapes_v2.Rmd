@@ -51,10 +51,12 @@ First we simulate some landscape using point-type infrastructure as an example. 
 ```{r load_packages, message=FALSE, warning=FALSE}
 #Load packages
 library(dplyr)
+library(purrr)
 library(ggplot2)
-library(mobsim)
+library(NLMR)
 library(raster)
 library(rasterVis)
+library(landscapetools)
 library(sf)
 
 library(oneimpact)
@@ -73,9 +75,12 @@ nfeat <- 1000 # number of features
 ext <- 30000 # extension of the landscape
 nc <- 1 # number of centers or patches
 wd <- ext/20 # width of the patch
-pts <- set_points(n_features = 1000, centers = nc,
-                  width = wd, res = 100,
+pts <- set_points(n_features = 1000, method = "NLMR",
+                  nlmr_function = "nlm_mpd",
+                  roughness = 0.5,
+                  res = 100,
                   extent_x = c(0, ext), extent_y = c(0, ext))
+plot(pts$base_rast)
 plot(pts$rast, col = "black", legend = F)
 
 # mean distance
@@ -83,34 +88,101 @@ pts$pts %>% pointDistance(lonlat = F) %>% as.dist() %>% mean
 mean(dist(pts$pts))
 ```
 
-We can now simulate landscapes with different patterns. For now we'll keep the total number of features constant.
+We can now simulate landscapes with different patterns. For now we'll keep the 
+total number of features constant and we'll simulate landscapes from a clumped
+pattern to a random pattern. To do so we'll use the function `NLMR::nlm_mpd` to
+create neutral landscape models to serve as weights for creating random points 
+in space.
 
-**Should we include a regular pattern as well?**
+**Should we include a regular pattern as well? So far we haven't included them.**
 
 ```{r several_point_patterns, fig.dim=c(16,4)}
 set.seed(123)
 
-# random, gradient, single center, multiple centers
-types <- c("random", "gradient", "single center", 
-           "5 centers large", "5 centers small",
-           "10 centers large", "10 centers small")
-nfeat <- 1000 # number of features
-ext <- 30000 # extent of the landscape
-nc <- c(1, 1, 1, 5, 5, 10, 10) # number of centers
-wd <- c(1, 0.3, 0.05, 0.15, 0.05, 0.15, 0.05)*ext # width of the "patches"
-buff <- 20000 # add buffer to avoid edge effects when calculating densities
+# parameters
+param_df <- expand.grid(ncol = 100,
+                        nrow = 100,
+                        resolution = 100, 
+                        roughness = c(2, seq(0.9, 0.1, -0.2))) %>% 
+  tibble::as_tibble()
 
+# simulated landscapes
+nlm_mpd_seed <- function(user_seed = 123, ...) {
+  set.seed(user_seed)
+  NLMR::nlm_mpd(...)
+}
+
+# simulate base rasters
+nlm_list <- param_df %>% purrr::pmap(nlm_mpd_seed, user_seed = 123)
+names(nlm_list) <- types <- c("random", paste0("clust", 1:5))
+
+# plot
+landscapetools::show_landscape(nlm_list)
+
+length(nlm_list[[1]])
+base_raster <- nlm_list[[4]]
+
+plot(base_raster)
+points(data.frame(pts))
+
+plot(pts)
+
+rasterVis::levelplot(stack(nlm_list[1:6]),
+                     names.attr = types)
+
+nlm_list2 <- sapply(nlm_list, raster::calc, fun = function(x) scales::rescale(ifelse(x < 0.2, 0, exp(x))))
+rasterVis::levelplot(stack(nlm_list2))
+```
+
+Now we use these maps to generate points.
+
+```{r several_point_patterns2, fig.dim=c(16,4)}
 # simulate points
-pts <- mapply(set_points, centers = nc, width = wd,
-              MoreArgs = list(n_features = 1000, res = 100,
-                              extent_x = c(0, ext), extent_y = c(0, ext),
-                              buffer_around = 20000))
-landscapes <- raster::stack(pts[2,])
+n_feat <- 100
+pts <- tibble(base_raster = nlm_list, method = "raster", n_features = n_feat) %>% 
+  purrr::pmap(set_points)
+# str(pts)
+  
+landscapes <- purrr::map(pts, ~.[[2]])
 names(landscapes) <- types
-# plot(landscapes, col = "black", nc = 4, legend = F)
 
-rasterVis::levelplot(landscapes, layout = c(4,2), names.attr = types, 
-                     par.settings = GrTheme, colorkey = FALSE)
+landscapetools::show_landscape(landscapes)
+# rasterVis::levelplot(stack(landscapes), layout = c(3,2), names.attr = types, 
+#                      par.settings = GrTheme, colorkey = FALSE)
+
+# points
+pts_coords <- purrr::map(pts, first)
+# str(pts_coords)
+
+# mean dist
+sapply(pts_coords, function(x) mean(dist(x)))
+
+# mean nndist
+library(spatstat)
+sapply(pts_coords, function(x) mean(nndist(x)))
+
+# mean isolation
+isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
+  # create random points
+  rand <- data.frame(x = runif(n_rand, ext[1], ext[2]), y = runif(n_rand, ext[1], ext[2]))
+  print(rand)
+  # calc dist
+  dists  <- pointDistance(x, rand, lonlat = lonlat)
+  # min dist
+  apply(dists, 2, min)
+}
+
+mean_isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
+  mean(isolation(x, n_rand = n_rand, ext = ext, lonlat = lonlat))
+}
+
+sapply(pts_coords, mean_isolation, n_rand = 110, ext = c(0, 10000))
+
+landscapes[[1]] %>% 
+  sf::st_bbox() %>% 
+  sf::st_as_sfc() %>% 
+  sf::st_sample(size = 100, type = "random") %>% 
+  plot()
 ```
 
 First we illustrate, for one of those scenarios, how the maps change as we calculate either the distance to the nearest feature or the density of features at different scales.
