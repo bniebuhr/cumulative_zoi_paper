@@ -34,3 +34,9 @@ output:
 
 ## Re-do analysis for reindeer GPS points
 
+
+
+Notes
+
+- We only do simulations for point infrastructure; it is harder to simulate real case scenarios for
+lines and polygons, but the insights from the point scenarios should hold true for these other cases.

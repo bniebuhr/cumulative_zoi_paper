@@ -1,6 +1,6 @@
 ---
-title: "Simulating scenarios of feature distribution"
-author: "Bernardo Niebuhr"
+title: "Simulating scenarios: comparing log-distance to the nearest feature to the cumulative impact (density) measure"
+author: "Bernardo Niebuhr, Bram van Moorter"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 geometry: margin=2cm
 output: 
@@ -23,7 +23,10 @@ knitr::opts_chunk$set(
   tidy = "styler",
   dev = c("png", "pdf"),
   dpi = 600,
-  fig.path = "figure/"
+  fig.path = "figure/",
+  fig.align="center",
+  message=FALSE, 
+  warning=FALSE
 )
 
 options(
@@ -40,33 +43,37 @@ There are a few big questions that underlie the assessment of the effects of ant
 When performing environmental impact assessments, one aims not only to to find which factors affect wildlife and how strongly, 
 but also (i) at which spatial scale there are effects and (ii) how these effects sum and interact when (as it is often the case) there are multiple infrastructures and vectors of landscape modification. The first question is also knows as the Zone of Influence (ZoI) problem. The second is generally tackled in the context of cumulative impact assessment.
 
-In the main text of this manuscript, we argue that the density of infrastructure features might better represent the cumulative effect of multiple features in the landscape than considering only the distance to the feature nearest to a given location. This, however, might vary depending on how the number of features in the landscape, how these features are distributed in space, and what is the ZoI of each of those features.
+In the main text of this manuscript, we argue that the cumulative impact measure - based on the  density of infrastructure features - might better represent the cumulative effect of multiple features in the landscape than considering only the distance to the feature nearest to a given location. This, however, might vary depending on the number of features in the landscape, how these features are distributed in space, and what is the ZoI of each of those features.
 
-Here we simulate some landscapes with point-type infrastructure spread following different patterns, calculate the distance to the nearest feature and the density of features, at multiple scales, and assess when and how these variables might represent different sources of spatial variation.
+Here we simulate some landscapes with point-type infrastructure spread following different patterns, calculate the distance to the nearest feature and the cumulative impact (density) of features, at multiple scales, and assess when and how these variables might represent different sources of spatial variation.
 
 ## Simulate landscapes
 
-First we simulate some landscape using point-type infrastructure as an example. They could represent the spatial location of houses, cabins, or wind turbines, for example. To do this we'll use a few functions designed within the package `oneimpact`.
+First we simulate some landscape using point-type infrastructure as an example. They could represent the spatial location of houses, cabins, or wind turbines, for example. To do this we'll use a few functions designed within the R package `oneimpact`. We also load other packages from data manipulation and plotting.
+
 
 ```{r load_packages, message=FALSE, warning=FALSE}
 #Load packages
+
+# data manipulation
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(ggpubr)
+library(lsr) # for correlations
 
+# spatial packages
 library(mobsim)
 library(raster)
 library(landscapetools)
 library(sf)
 library(spatstat)
 
+# oneimpact package
 library(oneimpact)
-
-library(reshape2)
-library(lsr)
 ```
 
-We set a 30x30 km^2^ landscape and can create simulate points following different spatial patterns. Here is an example landscape where the points are spread close to a single center (e.g. houses in a village).
+We set a 30x30 km^2^ landscape and can simulate points following different spatial patterns. Here is an example landscape where the points are spread close to a single center (e.g. houses in a village).
 
 ```{r one_point_pattern, fig.dim=c(5,5)}
 set.seed(1234)
@@ -83,28 +90,29 @@ pts <- set_points(n_features = 1000, centers = nc,
 landscapetools::show_landscape(pts$rast, legend.position = "none")
 ```
 
-We can now simulate landscapes with different patterns. We start with 3 scenarios: regular, random, and clumped distribution of points. Each scenario is simulated with 10, 100, and 1000 points, so that we have 12 scenarios in total.
+We can now simulate landscapes with different patterns. We start with 3 spatial distribution of points: regular, random, and clumped distribution of points. For the clumped distribution, we use two scenarios, where the point features are spread in either 5 or only 1 focal patch. Each scenario is simulated with 10, 100, and 1000 points, so that we have 12 scenarios in total.
 
-```{r several_point_patterns, fig.dim=c(16,4)}
-set.seed(123)
+```{r several_point_patterns}
+set.seed(1234)
 
 # random, gradient, single center, multiple centers
 methods <- c("regular", "random", "mobsim")
 name <- c("regular", "random", "clumped5", "clumped1")
-nfeat <- c(10, 100, 1000) # number of features
+nfeat <- c(10, 30, 50, 100, 200, 1000) # number of features
 res <- 100 # resolution
 ext <- 30000 # extent of the landscape
 nc <- c(5, 1) # number of centers for clumped
-wd <- c(0.05)*ext # width of the "patches"
+wd <- c(0.05, 0.15)*ext # width of the "patches"
 
 # parameters
 parms_df1 <- expand.grid(method = methods, n_features = nfeat,
-                        centers = nc[1], width = wd)
+                        centers = nc[1], width = wd) # first 3 scenarios
 parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
-                         centers = nc[2], width = wd)
+                         centers = nc[2], width = wd) # parameters for clumped1
 parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
-  dplyr::arrange(n_features, method)
-scenarios <- paste0(rep(name, 3), "_", rep(nfeat, each = 4))  
+  dplyr::arrange(width, n_features, method)
+# names of scenarios
+scenarios <- paste0(rep(name, 12), "_", rep(rep(nfeat, each = 4), 2), "_", rep(wd/300, each = 24))  
 
 # simulate points
 pts <- parms_df %>% purrr::pmap(set_points, res = res, 
@@ -114,15 +122,23 @@ pts <- parms_df %>% purrr::pmap(set_points, res = res,
 
 landscapes <- purrr::map(pts, ~ .[[2]])
 names(landscapes) <- scenarios
+```
 
+Here we visualize the scenarios with 1000 features.
+
+```{r visualize_1000}
 # show landscapes with n_features = 1000
-landscapetools::show_landscape(landscapes[9:12])
 # plot(landscapes, col = "black", nc = 4, legend = F)
 # rasterVis::levelplot(stack(landscapes), layout = c(4,3), names.attr = scenarios,
 #                      par.settings = GrTheme, colorkey = FALSE)
+
+
+landscapes[21:24] %>% 
+  purrr::map(raster::crop, y = extent(0, ext, 0, ext)) %>% 
+  landscapetools::show_landscape()
 ```
 
-We also store some variables related the distance between points for each of these scenarios. These variables are: (i) the average distance between points, the average nearest neighbor distance, and the average isolation.
+We also store some variables related the distance between points for each of these scenarios. These variables are: (i) the average distance between points, (ii) the average nearest neighbor distance, and (iii) the average isolation. The average is isolation is defined here as the mean nearest neighbor distance between random points created in the landscapes and the simulated point feature locations.
 
 ```{r dist_points_patterns}
 # isolation to random points
@@ -131,7 +147,7 @@ isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
   rand <- data.frame(x = runif(n_rand, ext[1], ext[2]), y = runif(n_rand, ext[1], ext[2]))
   # calc dist
   dists  <- pointDistance(x, rand, lonlat = lonlat)
-  # min dist
+  # min dist (nearest neighbor)
   apply(dists, 2, min)
 }
 
@@ -142,13 +158,14 @@ mean_isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
 
 # points
 pts_coords <- purrr::map(pts, first)
-names(pts_coords) <- scenarios
+# names(pts_coords) <- scenarios
 
 # calculate distances
 dist_scenarios <- data.frame(
   scenario = scenarios,
   spatial_dist = rep(name, 3),
   n_features = rep(nfeat, each = 4),
+  patch_width = rep(wd/300, each = 24),
   mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
   mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
   mean_isolation = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext))
@@ -157,19 +174,23 @@ dist_scenarios <- data.frame(
 dist_scenarios
 ```
 
-First we illustrate, for one of those scenarios, how the maps change as we calculate either the distance to the nearest feature or the density of features at different scales. For illustration purposes, we use here a Gaussian filter, where the scale corresponds to the $\sigma$ parameters of the Gaussian distribution, and the moving window has a size of $3 \cdot \sigma$.
+## Calculate distance and cumulative effects
+
+First we illustrate, for one of those scenarios, how the maps change as we calculate either the distance to the nearest feature or the density of features at different scales. For illustration purposes, we use here a Gaussian filter, where the scale corresponds to the standard deviation $\sigma$ of the Gaussian distribution, and the moving window has a size of $3 \cdot \sigma$.
 
 ```{r one_dist_dens, message=FALSE}
 # calculate distance and density at multiple scales for one input
 scales <- c(250, 500, 1000, 2500, 5000)/2 # scales for Gaussian filter
 dist_dens1 <- calc_dist_dens(landscapes[[2]], type_density = "Gauss", scale = scales,
                              extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
-plot(dist_dens1, nc = 4)
+plot(dist_dens1, nc = 3)
 ```
+
 
 We can see that the results are different if one transforms the distance variable, as it is generally done in ecological models. Below we show, as an example, how it looks like when the distances are log- and sqrt-transformed, or when an exponential decay distance is used instead. It also affects how distances and densities correlate, as we'll see.
 
 ```{r log_trasnform_dist}
+# transformed distance
 log_dist <- calc_dist(landscapes[[2]], transform_dist = "log", log_base = 10,
                       extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
 sqrt_dist <- calc_dist(landscapes[[2]], transform_dist = "sqrt",
@@ -177,42 +198,49 @@ sqrt_dist <- calc_dist(landscapes[[2]], transform_dist = "sqrt",
 exp_decay_dist <- calc_dist(landscapes[[2]], transform_dist = "exp_decay",
                        exp_hl = 1000,
                        extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+
+# combine
 dists <- raster::stack(dist_dens1[[1]], log_dist, sqrt_dist, exp_decay_dist)
+
+# plot
 names(dists) <- c("dist", "log-dist", "sqrt-dist", "exp-decay-dist")
 plot(dists, nc = 2)
 ```
+
+## Visual comparison
 
 Now we compare these variables visually for the different spatial point patterns, using the log-transformed distance, for now. We select the log-distance since it is
 a measure commonly used in ecological studies to include distance to the nearest features into the statistical models.
 
 ```{r several_dist_dens, message=FALSE}
 # redefine scales
-scales <- c(250, seq(500, 5000, by = 500))#/2 # scales for Gaussian filter
+scales <- c(250, seq(500, 5000, by = 500))/2 # scales for Gaussian filter
 
 # calculate distance and density at multiple scales for each input
 dist_dens <- purrr::map(landscapes, calc_dist_dens,
-                        # type_density = "Gauss", scale = scales,
-                        type_density = "circle", scale = scales,
+                        type_density = "Gauss", scale = scales,
+                        # type_density = "circle", scale = scales,
                         transform_dist = "log", log_base = 10,
                         extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
 
 # change names according to the scenario and the variable
-vars <- c("logdist", paste0("dens", scales))#*2))
+vars <- c("logdist", paste0("dens", scales*2))
 
 for(i in 1:length(dist_dens)) 
   names(dist_dens[[i]]) <- paste(strsplit(names(dist_dens)[i], "_")[[1]][1], vars, sep = "_")
 
 # slice a few of them to plot - for 
 slices <- c(1,2,4,6) #as.vector(outer(c(1,2,4,6), (0:3)*6, FUN = "+"))
-maps100 <- dist_dens[5:8]
+maps100 <- dist_dens[13:16]
 stk <- stack(maps100[[1]][[slices]], maps100[[2]][[slices]], maps100[[3]][[slices]], maps100[[4]][[slices]])
 plot(stk, nc = 4)
 ```
-## Calculate correlations
+
+## Calculate correlations between distance and cumulative impact (density)
 
 Now we are going to check how correlated these variables are in space, to evaluate how much they can have different ecological interpretations.
 
-```{r correlation}
+```{r correlation1}
 # Calculate pairwise Pearson correlation coefficient
 # rast_cor <- layerStats(dist_dens, stat = "pearson")[[1]]
 # 
@@ -242,45 +270,132 @@ scenarios_analysis <- scenarios_analysis_full %>%
   dplyr::mutate(n_features = factor(n_features))
   
 # plot
+dat_isol <- scenarios_analysis %>% 
+  dplyr::filter(patch_width == 5, spatial_dist %in% c("random", "regular")) %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation))
+
 scenarios_analysis %>% 
-  # dplyr::filter(n_features == 100) %>% 
+  dplyr::filter(patch_width == 5) %>% 
   ggplot(aes(scale, abs(corr), color = spatial_dist)) +
   geom_point() +
   geom_line() +
+  geom_vline(data = dat_isol, aes(xintercept = mean_iso, linetype = spatial_dist)) +
   ylim(0, 1) +
   facet_wrap(~n_features) +
   labs(x = "Zone of Influence", 
        y = "Absolute correlation",
-       color = "Spatial distribution") +
+       color = "Spatial distribution",
+       linetype = "Mean isolation") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+```
 
+We can see that the pattern changes greatly with both the total number of features 
+and their spatial distribution. 
+
+For clumped distribution of features and when the patches of features are small (radius = 
+5% of the study area extent, in the figure above), the point features are quite 
+apart from each other
+in general, so as the ZoI increases the cumulative impact (density) measure gets 
+more correlated to the log-distance
+
+That is also true for regular and random distribution of features when the density 
+of features is small (n = 10) and, consequently, their mean isolation is high.
+As the density density of features increase, and the mean isolation between points 
+decreases, the cumulative impact (density) measure starts to present a peak when 
+ZoI is close to the mean isolation between features in the landscape - compare
+the peaks in the plots above with the mean isolation for the random and regular
+scenarios. For larger ZoI valuws, the correlation drops very 
+quickly, especially for the regular distribution scenario.
+
+This means that, when comparing log-distances to the cumulative impact measure 
+for random and regular distribution of features,
+they only represent similar spatial variation when the the mean isolation of the
+features is around the same size of their ZoI. This is still true for clumped 
+distribution when the radius of the "patches" of features is larger, such as
+in the figure below (radius = 15% of the landscape extent). 
+For more than one cluster, the correlation between log-distance and the
+cumulative impact measure also starts to show a peak related to the average
+distance between features. The only case when this changes is when there is 
+a single small clump of features.
+
+```{r correlation2}
+# plot
+dat_isol <- scenarios_analysis %>% 
+  dplyr::filter(patch_width == 15, spatial_dist %in% c("clumped5")) %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation))
+
+scenarios_analysis %>% 
+  dplyr::filter(patch_width == 15, spatial_dist %in% c("clumped5", "clumped1")) %>% 
+  ggplot(aes(scale, abs(corr), color = spatial_dist)) +
+  geom_point() +
+  geom_line() +
+  geom_vline(data = dat_isol, aes(xintercept = mean_iso, linetype = spatial_dist)) +
+  ylim(0, 1) +
+  facet_wrap(~n_features) +
+  labs(x = "Zone of Influence", 
+       y = "Absolute correlation",
+       color = "Spatial distribution",
+       linetype = "Mean isolation") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+```
+<!-- Now we use, instead of the name of the scenario, the average distance measures  -->
+<!-- taken for each, to see if any response can be better interpreted in this terms.  -->
+<!-- First, below we see how these variables change for each scenario and density of  -->
+<!-- features. -->
+
+```{r correlation3, eval=FALSE, include=FALSE}
 # relationship between scenarios
 ds1 <- dist_scenarios %>% 
   ggplot(aes(x = spatial_dist, y = mean_dist, color = factor(n_features))) +
   geom_point() +
   geom_line(aes(group = n_features)) +
+  ylim(0, NA) +
   labs(x = "",
        y = "Mean distance",
-       color = "N. features")
+       color = "N. features") +
+  theme(axis.text.x = element_blank())
 ds2 <- dist_scenarios %>% 
   ggplot(aes(x = spatial_dist, y = mean_nndist, color = factor(n_features))) +
   geom_point() +
   geom_line(aes(group = n_features)) +
+  ylim(0, NA) +
   labs(x = "Spatial distribution",
        y = "Mean nearest neighbor dist.",
-       color = "N. features")
+       color = "N. features") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 ds3 <- dist_scenarios %>% 
   ggplot(aes(x = spatial_dist, y = mean_isolation, color = factor(n_features))) +
   geom_point() +
   geom_line(aes(group = n_features)) +
+  ylim(0, NA) +
   labs(x = "Spatial distribution",
        y = "Mean isolation",
-       color = "N. features")
+       color = "N. features") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+# combine
 ggpubr::ggarrange(ds1, ds2, ds3, nrow = 2, ncol = 2, common.legend = T, 
                   legend = "right")
+```
 
+<!-- As expected, the mean distance between points and the mean distance to the nearest neighbor -->
+<!-- point increase when we depart from a more clumped scenario to a random or regular distribution. -->
+<!-- They represent the distance relationship between points only, regardless of the size of the landscape -->
 
+<!-- The mean isolation follows an opposite pattern: it decreases when we depart  -->
+<!-- from clumped to random or regular distribution of points. In all cases, even though the general -->
+<!-- pattern is qualitatively the same, quantitatively these quantities vary with the number of -->
+<!-- features - obviously the distances or isolation are larger when the density of points is smaller. -->
+
+<!-- We take the last measure - mean isolation - to represent the relationship between  -->
+<!-- the spatial distribution of points and the correlation between log-distances and cumulative impact -->
+<!-- (density) measures. -->
+
+```{r correlation4, eval=FALSE, include=FALSE}
 scenarios_analysis %>% 
   # dplyr::filter(n_features == 1000) %>% 
   ggplot(aes(scale, abs(corr), color = mean_isolation)) +
@@ -292,10 +407,39 @@ scenarios_analysis %>%
   facet_wrap(~n_features) +
   theme_bw() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
-
-
-### TRY THE DIST VARIABLES HERE
-
 ```
 
+
+## Discussion
+
+Here we have compared how different is the spatial variation when one computes
+log-distances and CI (density) from point infrastructure. To do so, we simulated point
+features in space in different densities and spatial distributions, calculated 
+the log-distances and CI (density) at multiple scales (ZoI) and compared them
+through correlation.
+
+We found the correlation between log-distance and CI is intrinsically correlated
+with the mean isolation of the point features in space.
+
+When all point infrastructure features are limited to a single, small cluster, 
+so that their mean isolation is very high,
+log-distance and CI are little correlated, and their correlation increases as 
+the scale (ZoI) increses. In this case, they start to represent a more similar
+variation when the scale/ZoI is high. This also holds true when there more then one
+cluster of points but their radius is very small 
+(scenario with 5 small clumps shown above),
+a case in which the mean isolation is still too high.
+
+In all other cases - either a regular or random distribution of points, or a clumped
+distribution with more clusters or larger clusters - the log-distance is only highly
+correlated with the CI (density) when the scale (ZoI) is at the same order of magnitude
+of the mean isolation of the point features.
+
+Given that the determination of the scale/ZoI is an empirical question and varies
+according to the ecological system and context of the study area, we argue here 
+that in very limited cases 
+using the distance to the nearest feature might be equivalent to using CI or 
+the density of infrastructure. In all other cases, the CI might represent a 
+wider range of spatial variation metrics, that in turn should better represent
+the cumulative effect of the multiple infrastructure in space.
 

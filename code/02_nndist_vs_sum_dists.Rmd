@@ -1,0 +1,97 @@
+---
+title: "Simulating scenarios: Comparing distance to the nearest feature to the sum of distances, based on exponential decay"
+author: "Bernardo Niebuhr, Bram van Moorter"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  message=FALSE, 
+  warning=FALSE
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+```
+
+## Introduction
+
+Our aim here is to compare how distance and density/cumulative impact measures (CI) compare
+when calculated exactly with the same basis. We use here exponential decay distance as
+an example since one can more directly extract thresholds (given its half-life and decayment
+nature) or measures that in some way represent the ZoI or scale of effects of 
+a given infrastructure. 
+
+To do so, we do the following:
+1) create a set of points representing the locations of point infrastructure,
+according to different spatial distributions;
+2) calculate the exponential decay distance to each of these point features and
+put all measures in a RasterStack;
+3) calculate the (i) minimum of all distance measures (equivalent to the distance
+to the nearest feature) and the (ii) sum of all distance measures (equivalent to the
+CI); 
+4) compare the results.
+
+**Should we also include the comparison with the filter using focal here? Yes**
+
+## Simulate landscapes
+
+We start by creating points and separating them in different rasters, so that it is 
+possible to calculate distance to each of them. For simplicity, here we keep constant the density
+of points (n = 100) and the radius of the feature clusters (radius = 10% of the landscape
+size).
+
+**describe the four scenarios here again, the readers do not need to read the other SupInfo**
+
+```{r create_points}
+set.seed(12)
+
+# random, gradient, single center, multiple centers
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5", "clumped1")
+nfeat <- c(100) # number of features
+res <- 100 # resolution
+ext <- 30000 # extent of the landscape
+nc <- c(5, 1) # number of centers for clumped
+wd <- c(0.15)*ext # width of the "patches"
+
+# parameters
+parms_df1 <- expand.grid(method = methods, n_features = nfeat,
+                        centers = nc[1], width = wd) # first 3 scenarios
+parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
+                         centers = nc[2], width = wd) # parameters for clumped1
+parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
+  dplyr::arrange(width, n_features, method)
+# names of scenarios
+scenarios <- paste0(rep(name, 12), "_", rep(rep(nfeat, each = 4), 2), "_", rep(wd/300, each = 24))  
+
+# simulate points
+pts <- parms_df %>% purrr::pmap(set_points, res = res, 
+                                extent_x = c(0, ext),
+                                extent_y = c(0, ext), 
+                                buffer_around = 10000)
+```
+
