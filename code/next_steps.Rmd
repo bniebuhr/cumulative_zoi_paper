@@ -20,8 +20,14 @@ output:
 
 - Calculate distance between points - OK!
 
-- Set a reasonable set of landscapes to tell a history: from random to clustered, plus regular
+- Allow calc_dist to calculate distance for multiple parameters  
+(different methods or different parameters for exp)
 
+- Set a reasonable set of landscapes to tell a history: from random to clustered, plus regular 
+  - v1. normal dist vs density;
+  - v2. dist for all features, exp_decay dist, then min and sum;
+  - v3. exp_decay dist vs exp_decay filter
+  
 - Simulate points and check correlation
 
 - See best form to represent this (using dist_points, or ZOI, or what)

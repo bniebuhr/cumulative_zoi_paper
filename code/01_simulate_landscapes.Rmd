@@ -51,11 +51,14 @@ First we simulate some landscape using point-type infrastructure as an example. 
 ```{r load_packages, message=FALSE, warning=FALSE}
 #Load packages
 library(dplyr)
+library(purrr)
 library(ggplot2)
+
 library(mobsim)
 library(raster)
-library(rasterVis)
+library(landscapetools)
 library(sf)
+library(spatstat)
 
 library(oneimpact)
 
@@ -63,7 +66,7 @@ library(reshape2)
 library(lsr)
 ```
 
-We set a 30x30 km^2^ landscape and can create simulate points following different spatial patterns depending on the number of centers (or patches) around which the points will be located (parameter `centers`) and the width of their distribution around these centers (parameter `width`). Here is an example landscape where the points are spread close to a single center (e.g. houses in a village).
+We set a 30x30 km^2^ landscape and can create simulate points following different spatial patterns. Here is an example landscape where the points are spread close to a single center (e.g. houses in a village).
 
 ```{r one_point_pattern, fig.dim=c(5,5)}
 set.seed(1234)
@@ -76,84 +79,135 @@ wd <- ext/20 # width of the patch
 pts <- set_points(n_features = 1000, centers = nc,
                   width = wd, res = 100,
                   extent_x = c(0, ext), extent_y = c(0, ext))
-plot(pts$rast, col = "black", legend = F)
 
-# mean distance
-pts$pts %>% pointDistance(lonlat = F) %>% as.dist() %>% mean
-mean(dist(pts$pts))
+landscapetools::show_landscape(pts$rast, legend.position = "none")
 ```
 
-We can now simulate landscapes with different patterns. For now we'll keep the total number of features constant.
-
-**Should we include a regular pattern as well?**
+We can now simulate landscapes with different patterns. We start with 3 scenarios: regular, random, and clumped distribution of points. Each scenario is simulated with 10, 100, and 1000 points, so that we have 12 scenarios in total.
 
 ```{r several_point_patterns, fig.dim=c(16,4)}
 set.seed(123)
 
 # random, gradient, single center, multiple centers
-types <- c("random", "gradient", "single center", 
-           "5 centers large", "5 centers small",
-           "10 centers large", "10 centers small")
-nfeat <- 1000 # number of features
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5", "clumped1")
+nfeat <- c(10, 100, 1000) # number of features
+res <- 100 # resolution
 ext <- 30000 # extent of the landscape
-nc <- c(1, 1, 1, 5, 5, 10, 10) # number of centers
-wd <- c(1, 0.3, 0.05, 0.15, 0.05, 0.15, 0.05)*ext # width of the "patches"
-buff <- 20000 # add buffer to avoid edge effects when calculating densities
+nc <- c(5, 1) # number of centers for clumped
+wd <- c(0.05)*ext # width of the "patches"
+
+# parameters
+parms_df1 <- expand.grid(method = methods, n_features = nfeat,
+                        centers = nc[1], width = wd)
+parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
+                         centers = nc[2], width = wd)
+parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
+  dplyr::arrange(n_features, method)
+scenarios <- paste0(rep(name, 3), "_", rep(nfeat, each = 4))  
 
 # simulate points
-pts <- mapply(set_points, centers = nc, width = wd,
-              MoreArgs = list(n_features = 1000, res = 100,
-                              extent_x = c(0, ext), extent_y = c(0, ext),
-                              buffer_around = 20000))
-landscapes <- raster::stack(pts[2,])
-names(landscapes) <- types
-# plot(landscapes, col = "black", nc = 4, legend = F)
+pts <- parms_df %>% purrr::pmap(set_points, res = res, 
+                                extent_x = c(0, ext),
+                                extent_y = c(0, ext), 
+                                buffer_around = 10000)
 
-rasterVis::levelplot(landscapes, layout = c(4,2), names.attr = types, 
-                     par.settings = GrTheme, colorkey = FALSE)
+landscapes <- purrr::map(pts, ~ .[[2]])
+names(landscapes) <- scenarios
+
+# show landscapes with n_features = 1000
+landscapetools::show_landscape(landscapes[9:12])
+# plot(landscapes, col = "black", nc = 4, legend = F)
+# rasterVis::levelplot(stack(landscapes), layout = c(4,3), names.attr = scenarios,
+#                      par.settings = GrTheme, colorkey = FALSE)
 ```
 
-First we illustrate, for one of those scenarios, how the maps change as we calculate either the distance to the nearest feature or the density of features at different scales.
+We also store some variables related the distance between points for each of these scenarios. These variables are: (i) the average distance between points, the average nearest neighbor distance, and the average isolation.
+
+```{r dist_points_patterns}
+# isolation to random points
+isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
+  # create random points
+  rand <- data.frame(x = runif(n_rand, ext[1], ext[2]), y = runif(n_rand, ext[1], ext[2]))
+  # calc dist
+  dists  <- pointDistance(x, rand, lonlat = lonlat)
+  # min dist
+  apply(dists, 2, min)
+}
+
+# mean isolation
+mean_isolation <- function(x, n_rand = 100, ext = c(0, 1), lonlat = FALSE) {
+  mean(isolation(x, n_rand = n_rand, ext = ext, lonlat = lonlat))
+}
+
+# points
+pts_coords <- purrr::map(pts, first)
+names(pts_coords) <- scenarios
+
+# calculate distances
+dist_scenarios <- data.frame(
+  scenario = scenarios,
+  spatial_dist = rep(name, 3),
+  n_features = rep(nfeat, each = 4),
+  mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
+  mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
+  mean_isolation = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext))
+)
+
+dist_scenarios
+```
+
+First we illustrate, for one of those scenarios, how the maps change as we calculate either the distance to the nearest feature or the density of features at different scales. For illustration purposes, we use here a Gaussian filter, where the scale corresponds to the $\sigma$ parameters of the Gaussian distribution, and the moving window has a size of $3 \cdot \sigma$.
 
 ```{r one_dist_dens, message=FALSE}
 # calculate distance and density at multiple scales for one input
-scales <- c(250, 500, 1000, 2500, 5000, 10000)/2 # scales for Gaussian filter
-dist_dens1 <- calc_dist_dens(landscapes[[3]], type_density = "Gauss", scale = scales,
-                            extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+scales <- c(250, 500, 1000, 2500, 5000)/2 # scales for Gaussian filter
+dist_dens1 <- calc_dist_dens(landscapes[[2]], type_density = "Gauss", scale = scales,
+                             extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
 plot(dist_dens1, nc = 4)
 ```
 
-We can see that the results are different if one transforms the distance variable, as it is generally done in ecological models. Below we show, as an example, how it looks like when the distances are log- and sqrt-transformed. It probably affects how distances and densities correlate, as we'll see.
+We can see that the results are different if one transforms the distance variable, as it is generally done in ecological models. Below we show, as an example, how it looks like when the distances are log- and sqrt-transformed, or when an exponential decay distance is used instead. It also affects how distances and densities correlate, as we'll see.
 
 ```{r log_trasnform_dist}
-log_dist <- calc_dist(landscapes[[3]], transform_dist = "log", log_base = 10,
+log_dist <- calc_dist(landscapes[[2]], transform_dist = "log", log_base = 10,
                       extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
-sqrt_dist <- calc_dist(landscapes[[3]], transform_dist = "sqrt",
+sqrt_dist <- calc_dist(landscapes[[2]], transform_dist = "sqrt",
                        extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
-dists <- raster::stack(dist_dens1[[1]], log_dist, sqrt_dist)
-names(dists) <- c("dist", "log-dist", "sqrt-dist")
-plot(dists, nc = 3)
+exp_decay_dist <- calc_dist(landscapes[[2]], transform_dist = "exp_decay",
+                       exp_hl = 1000,
+                       extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+dists <- raster::stack(dist_dens1[[1]], log_dist, sqrt_dist, exp_decay_dist)
+names(dists) <- c("dist", "log-dist", "sqrt-dist", "exp-decay-dist")
+plot(dists, nc = 2)
 ```
 
-Now we compare these variables visually for the different spatial point patterns, using the non-transformed distance, for now.
+Now we compare these variables visually for the different spatial point patterns, using the log-transformed distance, for now. We select the log-distance since it is
+a measure commonly used in ecological studies to include distance to the nearest features into the statistical models.
 
 ```{r several_dist_dens, message=FALSE}
+# redefine scales
+scales <- c(250, seq(500, 5000, by = 500))#/2 # scales for Gaussian filter
+
 # calculate distance and density at multiple scales for each input
-dist_dens <- sapply(as.list(landscapes), calc_dist_dens,
-                    type_density = "Gauss", scale = scales,
-                    #transform_dist = "log", log_base = 10,
-                    extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+dist_dens <- purrr::map(landscapes, calc_dist_dens,
+                        # type_density = "Gauss", scale = scales,
+                        type_density = "circle", scale = scales,
+                        transform_dist = "log", log_base = 10,
+                        extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
 
-dist_dens <- raster::stack(dist_dens)
 # change names according to the scenario and the variable
-vars <- c("distance", paste0("density", scales*2))
-names(dist_dens) <- paste(rep(types, each = length(vars)), vars, sep = ".")
+vars <- c("logdist", paste0("dens", scales))#*2))
 
-# slice a few of them to plot
-slices <- as.vector(outer(c(1,2,4,6,7), (0:3)*7, FUN = "+"))
-plot(raster::subset(dist_dens, slices), nc = 5, maxnl = 30)#, main = "")
+for(i in 1:length(dist_dens)) 
+  names(dist_dens[[i]]) <- paste(strsplit(names(dist_dens)[i], "_")[[1]][1], vars, sep = "_")
+
+# slice a few of them to plot - for 
+slices <- c(1,2,4,6) #as.vector(outer(c(1,2,4,6), (0:3)*6, FUN = "+"))
+maps100 <- dist_dens[5:8]
+stk <- stack(maps100[[1]][[slices]], maps100[[2]][[slices]], maps100[[3]][[slices]], maps100[[4]][[slices]])
+plot(stk, nc = 4)
 ```
-
 ## Calculate correlations
 
 Now we are going to check how correlated these variables are in space, to evaluate how much they can have different ecological interpretations.
@@ -171,42 +225,77 @@ Now we are going to check how correlated these variables are in space, to evalua
 # # print
 # dist_dens_cor
 
-# Different approach
-dist_dens_df <- as.data.frame(dist_dens) 
+# put distances with rasters
+scenarios_analysis_full <- dist_scenarios %>% 
+  tibble::as_tibble() %>% 
+  dplyr::mutate(rasts = dist_dens,
+                rasts_df = purrr::map(rasts, as.data.frame),
+                corr_raw = purrr::map(rasts_df, lsr::correlate),
+                corr_list = purrr::map(corr_raw, function(x) x$correlation[1, 2:12]),
+                corr_df = purrr::map(corr_list, tibble::enframe, name = "dens", value = "corr")) %>% 
+  tidyr::unnest(corr_df) %>% 
+  dplyr::mutate(variable = gsub(".*_", "log-dist_", dens),
+                scale = as.numeric(gsub("\\D+", "", variable)))
 
-# Pairwise correlation
-corr <- correlate(dist_dens_df)
-# Select distance vs density for each scenario
-dist_dens_corr <- rbind(corr$correlation[1, 2:7], corr$correlation[8, 9:14],
-                        corr$correlation[15, 16:21], corr$correlation[22, 23:28],
-                        corr$correlation[29, 30:35], corr$correlation[36, 37:42],
-                        corr$correlation[43, 44:49])
-rownames(dist_dens_corr) <- types
-colnames(dist_dens_corr) <- vars[-1]
-
-# print
-dist_dens_corr
-
+scenarios_analysis <- scenarios_analysis_full %>% 
+  dplyr::select(-c(rasts:corr_list)) %>% 
+  dplyr::mutate(n_features = factor(n_features))
+  
 # plot
-dist_dens_corr %>% 
-  reshape2::melt() %>% 
-  ggplot(aes(x = Var2, y = Var1)) +
-  geom_raster(aes(fill=value)) +
-  scale_fill_viridis_c() +
-  labs(x = vars[-1], y = types) +
-  theme_bw()
+scenarios_analysis %>% 
+  # dplyr::filter(n_features == 100) %>% 
+  ggplot(aes(scale, abs(corr), color = spatial_dist)) +
+  geom_point() +
+  geom_line() +
+  ylim(0, 1) +
+  facet_wrap(~n_features) +
+  labs(x = "Zone of Influence", 
+       y = "Absolute correlation",
+       color = "Spatial distribution") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+# relationship between scenarios
+ds1 <- dist_scenarios %>% 
+  ggplot(aes(x = spatial_dist, y = mean_dist, color = factor(n_features))) +
+  geom_point() +
+  geom_line(aes(group = n_features)) +
+  labs(x = "",
+       y = "Mean distance",
+       color = "N. features")
+ds2 <- dist_scenarios %>% 
+  ggplot(aes(x = spatial_dist, y = mean_nndist, color = factor(n_features))) +
+  geom_point() +
+  geom_line(aes(group = n_features)) +
+  labs(x = "Spatial distribution",
+       y = "Mean nearest neighbor dist.",
+       color = "N. features")
+ds3 <- dist_scenarios %>% 
+  ggplot(aes(x = spatial_dist, y = mean_isolation, color = factor(n_features))) +
+  geom_point() +
+  geom_line(aes(group = n_features)) +
+  labs(x = "Spatial distribution",
+       y = "Mean isolation",
+       color = "N. features")
+ggpubr::ggarrange(ds1, ds2, ds3, nrow = 2, ncol = 2, common.legend = T, 
+                  legend = "right")
+
+
+scenarios_analysis %>% 
+  # dplyr::filter(n_features == 1000) %>% 
+  ggplot(aes(scale, abs(corr), color = mean_isolation)) +
+  geom_point() +
+  ylim(0, 1) +
+  labs(x = "Zone of Influence", 
+       y = "Absolute correlation",
+       color = "Mean isolation") +
+  facet_wrap(~n_features) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+
+### TRY THE DIST VARIABLES HERE
+
 ```
 
-Some text here.
 
-
-
-## To do
-
-1. Repeat the example for log(dist) and sqrt(dist)
-2. Repeat the test including multiple (n = 100?) simulations for each scenario and taking the average correlation
-3. Use GRASS GIS functions for neighborhood analyses
-4. Relationship between mean free path and the correlation?
-
-Maybe:
-5. Plot number of significant correlation tests as well.
