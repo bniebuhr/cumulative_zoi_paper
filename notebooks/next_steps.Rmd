@@ -13,30 +13,32 @@ output:
 ## Simulate landscape patterns
 
 - Implement function to calculate distance through GRASS
-
 - Implement function to calculate density through GRASS, using r.mfilter and r.resamp.filter
 
-- Implement exp decay distance - OK!
+- ~~Implement exp decay distance~~ - OK!
 
-- Calculate distance between points - OK!
+- ~~Calculate distance between points~~ - OK!
 
 - Allow calc_dist to calculate distance for multiple parameters  
-(different methods or different parameters for exp)
+(different methods or different parameters for exp) - **not priority!**
 
 - Set a reasonable set of landscapes to tell a history: from random to clustered, plus regular 
-  - v1. log dist vs density;
-  - v1.2 sqrt dist vs density;
-  - v1.3 exp decay dist vs density;
-  - v2. dist for all features, exp_decay dist, then min and sum;
-  - v3. exp_decay dist vs exp_decay filter
+  - ~~v1. log dist vs density~~; OK!
+  - ~~v1.2 sqrt dist vs density~~; OK!
+  - ~~v1.3 exp decay dist vs density~~; OK!
+  - ~~v2. dist for all features, exp_decay dist, then min and sum~~; OK!
+  - ~~v2.2 dist for all features, bartlett dist, then min and sum~~; OK!
+  - ~~v3. exp_decay dist vs exp_decay filter~~; OK!
+  - multiple scenarios with NLMR, H and a cutoff - then calculate nearest dist and focal
 
-Chat with Bram, 2021-12-13
-- 1) Try script 2 with tent shape - pmin(ZOI - linear decay, 0)/ZOI instead of distance decay
-- 2) Simulate script02 for different realizations (n.clusters, cluster.width), to have more variation in mean_isol 
-and the other measures and a more clear relationship between them and the correlation
-- 3) Surface parameter, put a threshold to determine the number of pixels using NLMR (instead of using to define weights)
+- Chat with Bram, 2021-12-13
 
-- Simulate points and check correlation - OK!
+  1) ~~Try script 2 with tent shape (Bartlett):  
+  pmin(ZOI - linear decay, 0)/ZOI instead of distance decay~~; - OK!
+  2) Simulate script02 for different realizations (n.clusters, cluster.width), to have more variation in mean_isol and the other measures and a more clear relationship between them and the correlation;
+  3) Surface parameter, put a threshold to determine the number of pixels using NLMR (instead of using to define weights);
+
+- ~~Simulate points and check correlation~~ - OK!
 
 - See best form to represent this (using dist_points, or ZOI, or what)
 
@@ -44,7 +46,14 @@ and the other measures and a more clear relationship between them and the correl
 
 
 
-Notes
+## Write manuscript sections
+
+### Methods
+  - Conceptual part
+  - Landscape patterns
+  - Case study for reindeer
+
+## Notes
 
 - xx % of the studies still use only the distance to the nearest feature. Many other (yy%) also
 use densities or spatial filters derived from the variables, with the main purpose of

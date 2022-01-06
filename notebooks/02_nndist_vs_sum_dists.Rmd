@@ -123,7 +123,7 @@ parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>%
   dplyr::slice(1:4, 7:8)
 ```
 
-```{r create_points_distances, eval=FALSE}
+```{r create_points_distances, eval=TRUE}
 # simulate points
 pts <- parms_df %>% 
   purrr::pmap(set_points, res = res,
@@ -149,7 +149,7 @@ create_scenarios <- tibble::tibble(
   # mean distance between points
   mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
   # mean nearest neighbor distance
-  mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x)))
+  mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
   # points coordinates, all together
   points_all = pts_coords,
   # separate points
@@ -164,7 +164,9 @@ create_scenarios <- tibble::tibble(
   pt_sep_rast = purrr::map(pt_sep_rasterized, function(x)
     purrr::map(x, function(z) z[[2]]))
 )
+```
 
+```{r create_points_distances, eval=FALSE}
 # calculate distances to each point using several ZoI/scales
 outerlist <- list()
 for(i in 1:length(create_scenarios$pt_sep_rast)) {
