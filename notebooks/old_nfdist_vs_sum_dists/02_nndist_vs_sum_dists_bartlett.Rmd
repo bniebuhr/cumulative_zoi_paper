@@ -1,0 +1,460 @@
+---
+title: "Simulating scenarios: comparing the cumulative distance to the distance to the nearest feature"
+author: "Bernardo Niebuhr, Bram van Moorter"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+bibliography: cuminf_paper.bib
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  message=FALSE, 
+  warning=FALSE
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+```
+
+# Introduction
+
+Our aim here is to assess how the measures of cumulative influence (*CumInf*) and 
+distance to the nearest feature compare when calculated exactly with the same 
+input layer with the locations of infrastructure features. 
+*CumInf* is a measure of cumulative distance, proportional to the density of features 
+(see the main text for details).
+For this comparison we computed here both measures based on the Bartlett distance, 
+a tent-shaped distance from the source
+infrastructure that corresponds to 1 in the infrastructure location and decreases 
+linearly with the distance from it, until it reaches zero at a given distance,
+defined here as the zone of influence of the infrastructure (ZoI) [@harris_use_1978]. 
+Formally, the Bartlett distance _d~Bartlett~_ is defined as:
+
+$$
+d_{Bartlett} = 
+    \begin{cases}
+      1 - \frac{d}{ZoI} & \text{if $d \le ZoI$} \\
+      0 & \text{if $d > ZoI$}
+    \end{cases}
+$$
+
+where _d_ is the Euclidean distance from each pixel to the infrastructure.
+We chose the Bartlett window because it clearly defines the ZoI (i.e., the distance 
+above which the influence of the infrastructure becomes zero).
+<!-- one can more directly extract thresholds (given its half-life and decayment -->
+<!-- nature) or measures that in some way represent the ZoI or scale of effects of  -->
+<!-- a given infrastructure.  -->
+
+To do so, we did the following:
+
+1) simulated a set of points representing the locations of point infrastructure,
+according to different spatial distributions;
+2) calculated the Bartlett distance to each of these point features and
+put all measures in a RasterStack;
+3) calculated the (i) sum of all distance measures (equivalent to the *CumInf*) and the (ii) maximum[^1] of all distance measures (equivalent to the distance to the nearest feature);
+4) compared the results visually and through correlation analyses.
+
+[^1]: Note that, contrary to the Euclidean distance, the Bartlett distance decreases
+as we step away from the infrastructure features. For this reason, the maximum distance
+over a set of features corresponds to the distance to the nearest feature.
+
+By comparing these two measures over different scenarios and different ZoIs, we can assess in which cases
+they represent a similar spatial variation and in which cases they represent different 
+spatial gradients.
+
+# Simulate landscapes
+
+We started by creating points and separating them into different rasters, so that it is 
+possible to calculate the distance to each of them. For simplicity, here we kept constant the number
+of points (n = 100).
+We simulated points with 3 spatial distribution patterns: regular, random, and clumped. 
+For the clumped distribution, we used two scenarios, where the point features are spread in either 
+five clusters or only one single focal cluster, and we varied the width of the clusters 
+(mean distance from the points to the center of the cluster = 5 and 15% 
+of the landscape size). Then, we had six scenarios in a gradient of clumpiness. The clumped scenarios
+are named based on the number of clusters and the radius of the cluster (e.g. "clumped1_5" means
+a scenario with one cluster with width equivalent to 5% of the landscape extent).
+
+```{r load_packages, message=FALSE, warning=FALSE}
+#Load packages
+
+# data manipulation
+library(dplyr)
+library(purrr)
+library(ggplot2) # for plot
+library(ggpubr) # for plot
+library(lsr) # for correlations
+
+# spatial packages
+library(mobsim)
+library(terra)
+library(landscapetools)
+library(sf)
+library(spatstat)
+
+# oneimpact package
+library(oneimpact)
+```
+
+
+```{r parameters}
+# Set parameters for the simulation
+set.seed(12)
+
+# random, gradient, single center, multiple centers
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5_15", "clumped1_15", "clumped5_5", "clumped1_5")
+nfeat <- c(100) # number of features
+res <- 100 # resolution
+ext <- 30000 # extent of the landscape
+nc <- c(5, 1) # number of centers or clusters for clumped
+wd <- c(0.15, 0.05)*ext # width of the "clusters"
+
+# ZoI values
+zoi_vals <- c(500, 750, 1000, 1250, 1500, 2000, 3000, 4000, 5000, 10000)
+
+# parameters
+parms_df1 <- expand.grid(method = methods, n_features = nfeat,
+                        centers = nc[1], width = wd) # first 3 scenarios
+parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
+                         centers = nc[2], width = wd) # parameters for clumped1
+parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
+  dplyr::arrange(desc(width), n_features, method) %>% 
+  dplyr::slice(1:4, 7:8)
+```
+
+```{r create_points_distances, eval=TRUE}
+# simulate points
+pts <- parms_df %>% 
+  purrr::pmap(set_points, res = res,
+              extent_x = c(0, ext),
+              extent_y = c(0, ext),
+              buffer_around = 10000)
+
+# coordinates
+pts_coords <- pts %>% 
+  purrr::map(first)
+
+# raster with points
+pts_all_rast <- pts %>% 
+  purrr::map(~ .[[2]])
+
+# crate scenarios, separating each point in a different
+# raster, to calculate distances
+create_scenarios <- tibble::tibble(
+  spatial_dist = name,
+  n_features = rep(nfeat, length(name)),
+  # mean isolation
+  mean_isolation = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext)),
+  # mean distance between points
+  mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
+  # mean nearest neighbor distance
+  mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
+  # points coordinates, all together
+  points_all = pts_coords,
+  # separate points
+  points_sep = purrr::map(points_all, function(x) 
+    purrr::map(1:nfeat, function(a, b) slice(b, a), b = x)),
+  # rasterize points
+  pt_sep_rasterized = purrr::map(points_sep, function(x)
+    purrr::pmap(list(point_coordinates = x), set_points, res = res,
+                extent_x = c(0, ext), extent_y = c(0, ext),
+                buffer_around = 10000)),
+  # pick only the raster
+  pt_sep_rast = purrr::map(pt_sep_rasterized, function(x)
+    purrr::map(x, function(z) z[[2]]))
+)
+
+# simplify tibble with scenarios and distances
+scenarios_dist <- create_scenarios %>% 
+  dplyr::select(-c(points_sep, pt_sep_rasterized, pt_sep_rast)) %>% 
+  dplyr::mutate(
+    parms = purrr::map(spatial_dist, function(x) {
+      tibble::tibble(zoi = zoi_vals) })
+  ) %>% 
+  tidyr::unnest(parms)
+```
+
+After creating the points, we calculated the Bartlett distance for each of the 100
+points, separately, in each scenario. We did that considering a range of different ZoI values,
+from 500 m to 10 km. Based on the stack of rasters with the distance to each of the features,
+we then computed two variables:
+
+- the cumulative influence, by calculating the sum of the distances of each raster in the series of
+distance rasters;
+- the nearest neighbor distance, by calculating the maximum distance over the series of distance rasters.
+
+```{r calc_distances, eval=FALSE}
+# calculate distances to each point using several ZoI/scales
+outerlist <- list()
+for(i in 1:length(create_scenarios$pt_sep_rast)) {
+  innerlist <- list(list(), list(), list(), list(), list(),
+                    list(), list(), list(), list(), list())
+
+  parms <- expand.grid(transform_dist = "bartlett",
+                       zoi = zoi_vals) %>%
+      tibble::as_tibble()
+  for(j in 1:length(create_scenarios$pt_sep_rast[[i]])) {
+    # print(paste(i, j))
+    # take the input raster
+    r <- create_scenarios$pt_sep_rast[[i]][[j]]
+    # calc dist for different parameters
+    r_dist <- parms %>% purrr::pmap(calc_dist, points = r)
+    # put each ZoI in a different list
+    for(element in 1:length(innerlist)) {
+      innerlist[[element]][[j]] <- r_dist[[element]]
+    }
+  }
+  
+  outerlist[[i]] <- innerlist
+}
+
+# stack each set of 100 dist maps, for each scenario
+# stack_list <- purrr::map(outerlist, function(x) purrr::map(x, raster::stack)) # raster
+stack_list <- map(outerlist, function(x) purrr::map(x, function(z) do.call(c, z)))
+length(stack_list)
+length(stack_list[[1]])
+```
+
+```{r save_distances_as_nc, echo=FALSE, eval=FALSE}
+data_dir <- "../data/"
+
+for(i in 1:length(stack_list)) {
+  name_out <- paste0(data_dir, "rasters_dist_bartlett_app2_scen_", i, "_", name[i], ".nc")
+  print(name_out)
+  out_ncdf <- terra::sds(stack_list[[i]])
+  names(out_ncdf) <- paste0(name[i], "_", zoi_vals)
+  ss <- terra::writeCDF(x = out_ncdf, filename = name_out, zname = "zoi_value")
+}
+```
+
+```{r load_distances_as_nc, echo=FALSE, eval=TRUE}
+files_nc <- list.files("../data", pattern = ".nc$", full.names = T) %>% 
+  grep(pattern = "bartlett", value = T)
+
+# create empty list of lists
+stack_list <- vector(mode = "list", length = length(files_nc))
+for(i in 1:length(files_nc)) {
+  stack_list[[i]] <- terra::sds(files_nc[i])
+}
+```
+
+
+```{r summarize_distances, eval=TRUE}
+# calculate nearest neighbor distance (max over the raster) 
+# and cumulative influence (sum over the raster)
+scenarios_dist$rast_dist <- list(NA)
+scenarios_dist$rast_nndist <- list(NA)
+scenarios_dist$rast_cuminf <- list(NA)
+scenarios_dist$rast_cuminf_d <- list(NA)
+cont <- 1
+for(i in 1:length(stack_list)) {
+  for(j in 1:length(stack_list[[i]])) {
+    # print(paste(i, j))
+    scenarios_dist$rast_dist[[cont]] <- stack_list[[i]][j]
+    scenarios_dist$rast_nndist[[cont]] <- terra::app(stack_list[[i]][j], max, na.rm = T)
+    scenarios_dist$rast_cuminf[[cont]] <- terra::app(stack_list[[i]][j], sum, na.rm = T)
+    # this is density, just to compare
+    scenarios_dist$rast_cuminf_d[[cont]] <- terra::app(stack_list[[i]][j], mean, na.rm = T)
+    
+    cont <- cont + 1
+  }
+}
+```
+
+# Visualize the differences
+
+Now we visualize the differences between the distance to the nearest feature and the cumulative influence.
+We start by looking at the scenarios considering a low ZoI or scale of influence
+(ZoI = 750 m).
+
+```{r viz750}
+which_scenarios <- c(0:2,4)
+indices <- which_scenarios*length(zoi_vals) + 2
+to_viz <- do.call(c, c(scenarios_dist$rast_nndist[indices], scenarios_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_scenarios+1], 2), 
+                       rep(c("nearest", "CumInf"), each = 4), 
+                       sep = ": ")
+```
+
+```{r viz750_2, fig.pos="h", fig.cap="Distance to the nearest feature (nearest, top row) and cumulative influence (CumInf, bottom row) to 100 point infrastructure features spread in space according to four different scenarios (columns, in order): regular, random, and clustered (5 clusters, cluster with = 0.15 and 0.05 of the landscape extent, for columns 3 and 4). The distances are calculated based on a Bartlett distance with ZoI = 750 m."}
+plot(to_viz, nc = 4)
+```
+
+We see in Fig. 1 that, since the ZoI is smaller than the average distance between points, the 
+distance to the nearest feature and the cumulative influence are qualitatively similar for
+most cases - with some small area under *CumInf* differing for the fourth 
+scenario ("clumped5_5").
+
+Now we show the same, but considering a larger ZoI of 3000 m (Fig. 2). We see that, in this case,
+the distance to the nearest feature is generally different from the *CumInf*
+measure.
+
+```{r viz3000, fig.pos="h", fig.cap="Distance to the nearest feature (nearest, top row) and cumulative influence (CumInf, bottom row) to 100 point infrastructure features spread in space according to four different scenarios (columns, in order): regular, random, and clustered (5 clusters, cluster with = 0.15 and 0.05 of the landscape extent, for columns 3 and 4). The distances are calculated based on a Bartlett distance with ZoI = 3000 m."}
+which_scenarios <- c(0:2, 5)
+indices <- which_scenarios*length(zoi_vals) + 7
+to_viz <- do.call(c, c(scenarios_dist$rast_nndist[indices], scenarios_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_scenarios+1], 2), 
+                       rep(c("nearest", "CumInf"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+# Correlation 
+
+Now we calculate the correlation between the distance to the nearest feature and the 
+cumulative influence for each scenario and ZoI. We plot these correlations and 
+compare the patterns to the nearest neighbor distance
+between features in each landscape scenario.
+
+```{r correlation1, fig.pos="h", fig.cap="Correlation between the distance to nearest feature and the cumulative influence, for the different scenarios (regular, random, clumped) and ZoI values. In the clumped scenarios the features are spread in either 5 clusters (C and D) or 1 cluster (E and F), whose width is either 0.15 (C, E) or 0.5 (D, F) of the landscape extent."}
+# Correlation between scenarios
+scenarios_analysis <- scenarios_dist %>% 
+  dplyr::mutate(corr = purrr::map2(rast_nndist, rast_cuminf, function(x, y) 
+    cor(terra::values(x), terra::values(y)))) %>% 
+  tidyr::unnest(corr) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name[c(1,2,3,4,5,6)],
+                labels = paste(LETTERS[1:length(name)], name[c(1,2,3,4,5,6)], sep = ": ")))
+  
+# plot
+dat_isol <- scenarios_analysis %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation),
+                   mean_dist = unique(mean_dist),
+                   mean_nndist = unique(mean_nndist))
+
+fact <- c(15000, 15000, 4500, 1500, 4500, 1500)
+dat_isol$mean_dist/fact*1000
+
+scenarios_analysis %>% 
+  ggplot(aes(zoi, abs(corr))) +
+  geom_point() +
+  geom_line() +
+  geom_vline(data = dat_isol, aes(xintercept = mean_nndist), linetype = 2) +
+  geom_vline(data = dat_isol, aes(xintercept = mean_iso), linetype = 3) +
+  geom_vline(data = dat_isol, aes(xintercept = 1000*mean_dist/fact), linetype = 2, color = 2) +
+  ylim(0.7, 1) +
+  facet_wrap(~spatial_dist) +
+  labs(x = "Zone of Influence", 
+       y = "Correlation",
+       color = "Spatial distribution",
+       linetype = "Mean n.n. distance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+```
+
+We see that, for regular, random, or less clumped point distributions (upper row in the
+figure above and "clumped1_15" scenario), the distance to
+the nearest feature and the cumulative influence are highly correlated at low ZoI
+values, when the ZoI is smaller than the distance betweeen features, 
+and the correlation decreases as the ZoI increases.
+
+For the more clumped distribution of points ("clumped5_5" and "clumped1_5"), as the point 
+patterns become more clumped in less and smaller clusters, there starts to appear an
+inflection in the correlation so that the correlation starts to increase with the ZoI.
+**Check the following:**
+The point of inflection seems to be related to the average nearest neighbor distance between features
+in each scenario. When the ZoI is greater than this value, the cumulative influence 
+gets different from the distance to the nearest feature, and what happens at ZoI values
+smaller or larger than this average depends on the spatial distribution of the features.
+
+# Using neighborhood analysis to calculate cumulative influence
+
+Now we show that the cumulative influence might be calculated using neighborhood analysis -
+by defining the spatial filter according to the aimed distance measure - here
+the Bartlett distance - for the whole set of point features at once, instead of calculating the
+distance for each of the features and then summarizing them. This is because *CumInf* is proportional
+to the density of features in space.
+
+Here we first define a Bartlett window for each of the corresponding ZoI values used above
+and we calculate *CumInf* using neighborhood analysis. Then we compare the *CumInf* measure
+based on both approaches - a summary of the distance to each of the features, and a neighborhood
+analysis for all features at once.
+
+```{r density_vs_cuminf}
+# create filter matrices
+parms_filter <- expand.grid(method = "bartlett", zoi = zoi_vals, scenario = name) %>% 
+  dplyr::select(-scenario)
+filter_matrices <- parms_filter %>% pmap(create_filter, res = res)
+
+# create density maps based on the rasters with all features
+in_rast <- rep(pts_all_rast, each = length(zoi_vals))
+maps_density <- purrr::map2(in_rast, filter_matrices, calc_dens, type = "mfilter")#,
+                            # extent_x_cut = c(0, ext), extent_y_cut = c(0, ext))
+
+scenarios_analysis <- scenarios_analysis %>% 
+  dplyr::mutate(rast_density = maps_density)
+
+# correlation
+scenarios_analysis <- scenarios_analysis %>% 
+  dplyr::mutate(corr_dens = purrr::map2(rast_density, rast_cuminf, function(x, y) 
+    cor(terra::values(x), terra::values(y), use = "complete.obs"))) %>% 
+  tidyr::unnest(corr_dens)
+
+# check
+all(scenarios_analysis$corr_dens > 0.99)
+```
+
+We see that the correlation between the two measures is higher than 0.99 is all cases.
+The small differences that arise are a result of using a limited-sized window instead of
+calculating the distance for each pixel based on the whole landscape, but for practical
+purposes they are negligible. Below we see the plot is basically the same for different scenarios.
+
+```{r density_vs_cuminf_plot, fig.pos="h", fig.cap="Cumulative influence calculated based on the distance to each feature and then summed (CumInf distance, top row) and based on neighborhood analyses (CumInf neighborhood, bottom row), for ZoI = 3000 m."}
+# plot
+which_scenarios <- c(0:2, 5)
+indices <- which_scenarios*length(zoi_vals) + 7
+to_viz <- do.call(c, c(scenarios_analysis$rast_density[indices], scenarios_analysis$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_scenarios+1], 2), 
+                       rep(c("CumInf distance", "CumInf neighborhood"), each = 4),
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+ 
+
+# Discussion
+
+In this document we have shown that:
+
+- In regular, random, and less clustered spatial distributions of features, the distance to
+the nearest feature and the cumulative influence represent different sources of 
+spatial variation as the zone of influence of the infrastructure increase. This
+happens because with large ZoIs the effects of the multiple infrastructure 
+start to interact with each other and accumulate.
+- In clumped distributions of features, on the contrary, when the ZoI is sufficiently 
+high the distance to the nearest feature and the cumulative influence are similar.
+This happens for more isolated infrastructure, suck as wind parks and small villages or
+urban centers, for instance. In these cases, as one walks far apart from the infrastructure, 
+the accumulated effect of the infrastructure features (e.g. wind turbines or houses) 
+is small and both measures are equivalent.
+- Cumulative Influence (or, equivalently, feature density) might be calculated using common 
+neighborhood (spatial filtering) analyses, what turns this procedure computationally
+fast and feasible.
+
+# References
