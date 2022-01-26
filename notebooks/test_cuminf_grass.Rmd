@@ -86,10 +86,10 @@ terra::plot(cabins, col = "black")
 # Euclidean distance
 
 ```{r}
-#R
+# R
 cabins_dist_r <- calc_influence_nearest(cabins, where = "R")
 
-# Euclidean distance
+# GRASS
 name_var <- "private_cabins_sub"
 cabins_dist_names <- calc_influence_nearest(name_var, where = "GRASS", quiet = F, overwrite = T)
 
@@ -105,64 +105,120 @@ terra::plot(c(cabins_dist_r, cabins_dist_grass),
 # Log distance
 
 ```{r}
-# Log distance
+# R
+cabins_logdist_r <- calc_influence_nearest(cabins, transform = "log", log_base = 10, where = "R")
+
+# GRASS
 name_var <- "private_cabins_sub"
-calc_influence_nearest_GRASS(name_var, transform = "log", log_base = 10, quiet = F, overwrite = T)
+cabins_logdist_names <- calc_influence_nearest(name_var, transform = "log", log_base = 10, 
+                                               where = "GRASS", quiet = F, overwrite = T)
 
 # visualize
-cabins_logdist <- readRAST(paste0(name_var, "_log_dist")) %>% 
+cabins_logdist_grass <- readRAST(cabins_logdist_names) %>% 
   raster::raster() %>% 
   terra::rast()
 
-terra::plot(cabins_logdist, main = "Log-distance from private cabins")
+terra::plot(c(cabins_logdist_r, cabins_logdist_grass), 
+            main = paste("Log-distance from private cabins - ", 
+                         c("R", "GRASS")))
 ```
 
 # Square root distance
 
 ```{r}
-# Sqrt distance
+# R
+cabins_sqrtdist_r <- calc_influence_nearest(cabins, transform = "sqrt", where = "R")
+
+# GRASS
 name_var <- "private_cabins_sub"
-calc_influence_nearest_GRASS(name_var, transform = "sqrt", quiet = F, overwrite = T)
+cabins_sqrtdist_names <- calc_influence_nearest(name_var, transform = "sqrt", 
+                                               where = "GRASS", quiet = F, overwrite = T)
 
 # visualize
-cabins_logdist <- readRAST(paste0(name_var, "_sqrt_dist")) %>% 
+cabins_sqrtdist_grass <- readRAST(cabins_sqrtdist_names) %>% 
   raster::raster() %>% 
   terra::rast()
 
-terra::plot(cabins_logdist, main = "Sqrt-distance from private cabins")
+terra::plot(c(cabins_sqrtdist_r, cabins_sqrtdist_grass), 
+            main = paste("Sqrt-distance from private cabins - ", 
+                         c("R", "GRASS")))
 ```
 
 # Exponental decay influence
 
+Example with ZoI = 1000m
+
 ```{r}
-# Exp decay
+# R
+cabins_exp_decay_r <- calc_influence_nearest(cabins, transform = "exp_decay", 
+                                             zoi = 1000, where = "R")
+
+# GRASS
 name_var <- "private_cabins_sub"
-calc_influence_nearest_GRASS(name_var, transform = "exp_decay", zoi = 1000, quiet = F, overwrite = T)
+cabins_exp_decay_names <- calc_influence_nearest(name_var, transform = "exp_decay",
+                                                 zoi = 1000, where = "GRASS", 
+                                                 quiet = F, overwrite = T)
 
 # visualize
-cabins_logdist <- readRAST(paste0(name_var, "_exp_decay")) %>% 
+cabins_exp_decay_grass <- readRAST(cabins_exp_decay_names) %>% 
   raster::raster() %>% 
   terra::rast()
 
-terra::plot(cabins_logdist, main = "Exponential decay influence from private cabins")
+terra::plot(c(cabins_exp_decay_r, cabins_exp_decay_grass), 
+            main = paste("Exp-decay influence from private cabins - ", 
+                         c("R", "GRASS")))
 ```
 
 # Bartlett decay
 
+Example with ZoI = 1000m
+
+
 ```{r}
-# Bartlett decay
+# R
+cabins_bartlett_r <- calc_influence_nearest(cabins, transform = "bartlett",
+                                            zoi = 1000, where = "R")
+
+# GRASS
 name_var <- "private_cabins_sub"
-calc_influence_nearest_GRASS(name_var, transform = "bartlett", zoi = 1000, quiet = F, overwrite = T)
+cabins_bartlett_names <- calc_influence_nearest(name_var, transform = "bartlett",
+                                                zoi = 1000, where = "GRASS",
+                                                quiet = F, overwrite = T)
 
 # visualize
-cabins_logdist <- readRAST(paste0(name_var, "_bartlett_decay")) %>% 
+cabins_bartlett_grass <- readRAST(cabins_bartlett_names) %>% 
   raster::raster() %>% 
   terra::rast()
 
-terra::plot(cabins_logdist, main = "Bartlett (linear) decay influence from private cabins")
+terra::plot(c(cabins_bartlett_r, cabins_bartlett_grass), 
+            main = paste("Linear-decay influence from private cabins - ", 
+                         c("R", "GRASS")))
 ```
 
+# Half-normal (Gaussian) decay influence
 
+Example with ZoI = 1000m
+
+```{r}
+# R
+cabins_hnorm_decay_r <- calc_influence_nearest(cabins, transform = "half_norm",
+                                               zoi = 1000, where = "R")
+
+# GRASS
+name_var <- "private_cabins_sub"
+cabins_hnorm_decay_names <- calc_influence_nearest(name_var, transform = "half_norm",
+                                                   zoi = 1000, where = "GRASS",
+                                                   quiet = T, overwrite = T)
+
+# visualize
+cabins_exp_decay_grass <- readRAST(cabins_hnorm_decay_names) %>% 
+  raster::raster() %>% 
+  terra::rast()
+
+terra::plot(c(cabins_hnorm_decay_r, cabins_exp_decay_grass), 
+            main = paste("Halfnormal influence from private cabins - ", 
+                         c("R", "GRASS")))
+```
 
 ```{r}
 # Euclidean distance
