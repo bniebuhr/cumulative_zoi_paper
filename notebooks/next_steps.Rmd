@@ -25,6 +25,8 @@ R and GRASS GIS. Explain how to download the package, which are the functions, t
 options/methods, and plot some results. (This might be a vignette of the package as well)
 (maybe separate results in R and GRASS in two different appendices?)
 
+- Appendix A with exponential: check why the filtering has eaten the borders, I should make some tests
+
 - Testar influencia media vs distancia media entre pontos, para diferentes ZoI
 
 - Change names of the parameters for the functions, and name of functions

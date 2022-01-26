@@ -1,9 +1,9 @@
-This is XeTeX, Version 3.14159265-2.6-0.99998 (TeX Live 2017/Debian) (preloaded format=xelatex 2020.12.10)  6 JAN 2022 13:26
+This is XeTeX, Version 3.14159265-2.6-0.99998 (TeX Live 2017/Debian) (preloaded format=xelatex 2020.12.10)  19 JAN 2022 10:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**02_nndist_vs_sum_dists_bartlett.tex
-(./02_nndist_vs_sum_dists_bartlett.tex
+**03_nearest_vs_cuminf_bartlett_raw.tex
+(./03_nearest_vs_cuminf_bartlett_raw.tex
 LaTeX2e <2017-04-15>
 Babel <3.18> and hyphenation patterns for 33 language(s) loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
@@ -853,8 +853,8 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1368.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1370.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1371.
-) (./02_nndist_vs_sum_dists_bartlett.aux)
-\openout1 = `02_nndist_vs_sum_dists_bartlett.aux'.
+) (./03_nearest_vs_cuminf_bartlett_raw.aux)
+\openout1 = `03_nearest_vs_cuminf_bartlett_raw.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 157.
 LaTeX Font Info:    ... okay on input line 157.
@@ -937,240 +937,259 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 LaTeX Info: Redefining \ref on input line 157.
 LaTeX Info: Redefining \pageref on input line 157.
 LaTeX Info: Redefining \nameref on input line 157.
-(./02_nndist_vs_sum_dists_bartlett.out) (./02_nndist_vs_sum_dists_bartlett.out)
+(./03_nearest_vs_cuminf_bartlett_raw.out) (./03_nearest_vs_cuminf_bartlett_raw.
+out)
 \@outlinefile=\write4
-\openout4 = `02_nndist_vs_sum_dists_bartlett.out'.
+\openout4 = `03_nearest_vs_cuminf_bartlett_raw.out'.
 
 (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/pdflscape.sty
 Package: pdflscape 2016/05/14 v0.11 Display of landscape pages in PDF (HO)
 Package pdflscape Info: Auto-detected driver: dvipdfm (xetex) on input line 99.
 
-) (./02_nndist_vs_sum_dists_bartlett.toc)
+) (./03_nearest_vs_cuminf_bartlett_raw.toc)
 \tf@toc=\write5
-\openout5 = `02_nndist_vs_sum_dists_bartlett.toc'.
+\openout5 = `03_nearest_vs_cuminf_bartlett_raw.toc'.
 
-LaTeX Font Info:    Try loading font information for OT1+lmr on input line 178.
 
-(/usr/share/texmf/tex/latex/lm/ot1lmr.fd
-File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-Package microtype Info: Loading generic protrusion settings for font family
-(microtype)             `lmr' (encoding: OT1).
-(microtype)             For optimal results, create family-specific settings.
-(microtype)             See the microtype manual for details.
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 178.
+Package xcolor Warning: Incompatible color definition on input line 169.
 
-(/usr/share/texmf/tex/latex/lm/omllmm.fd
-File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 178
-.
-(/usr/share/texmf/tex/latex/lm/omslmsy.fd
-File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 178
-.
-(/usr/share/texmf/tex/latex/lm/omxlmex.fd
-File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 178.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 178.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 178.
-LaTeX Font Info:    Try loading font information for U+msa on input line 178.
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
-File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
-)
-LaTeX Font Info:    Try loading font information for U+msb on input line 178.
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
-File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
-)
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 210.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 210.
+LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10> not available
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 174.
+
+Package xcolor Warning: Incompatible color definition on input line 190.
+
+
+Package xcolor Warning: Incompatible color definition on input line 190.
+
+
+Package xcolor Warning: Incompatible color definition on input line 192.
+
+
+Package xcolor Warning: Incompatible color definition on input line 222.
+
+
+Package xcolor Warning: Incompatible color definition on input line 222.
+
+
+Package xcolor Warning: Incompatible color definition on input line 222.
+
 [1
 
 ]
 
-Package xcolor Warning: Incompatible color definition on input line 237.
-
-LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 242.
-
-Package xcolor Warning: Incompatible color definition on input line 258.
+Package xcolor Warning: Incompatible color definition on input line 222.
 
 
-Package xcolor Warning: Incompatible color definition on input line 258.
+Package xcolor Warning: Incompatible color definition on input line 222.
 
 
-Package xcolor Warning: Incompatible color definition on input line 260.
+Package xcolor Warning: Incompatible color definition on input line 224.
 
 
-Package xcolor Warning: Incompatible color definition on input line 290.
+Package xcolor Warning: Incompatible color definition on input line 272.
 
 
-Package xcolor Warning: Incompatible color definition on input line 290.
+Package xcolor Warning: Incompatible color definition on input line 272.
 
-
-Package xcolor Warning: Incompatible color definition on input line 292.
-
+File: figure/create_points_distances-1.pdf Graphic file (type pdf)
+<use figure/create_points_distances-1.pdf>
 [2]
 
-Package xcolor Warning: Incompatible color definition on input line 352.
+Package xcolor Warning: Incompatible color definition on input line 276.
 
 
-Package xcolor Warning: Incompatible color definition on input line 352.
+Package xcolor Warning: Incompatible color definition on input line 307.
 
 
-Underfull \vbox (badness 10000) detected at line 352
- []
+Package xcolor Warning: Incompatible color definition on input line 307.
 
 
-Underfull \vbox (badness 10000) detected at line 352
- []
-
-
-Package xcolor Warning: Incompatible color definition on input line 352.
+Package xcolor Warning: Incompatible color definition on input line 309.
 
 [3]
 
-Package xcolor Warning: Incompatible color definition on input line 352.
+Package xcolor Warning: Incompatible color definition on input line 328.
 
 
-Package xcolor Warning: Incompatible color definition on input line 352.
+Package xcolor Warning: Incompatible color definition on input line 328.
 
 
-Package xcolor Warning: Incompatible color definition on input line 370.
+Package xcolor Warning: Incompatible color definition on input line 330.
 
 
-Package xcolor Warning: Incompatible color definition on input line 406.
+Package xcolor Warning: Incompatible color definition on input line 340.
 
 
-Package xcolor Warning: Incompatible color definition on input line 406.
+Package xcolor Warning: Incompatible color definition on input line 340.
 
 
-Package xcolor Warning: Incompatible color definition on input line 408.
+Package xcolor Warning: Incompatible color definition on input line 342.
 
 
-Package xcolor Warning: Incompatible color definition on input line 430.
+Package xcolor Warning: Incompatible color definition on input line 395.
 
 
-Package xcolor Warning: Incompatible color definition on input line 430.
+Package xcolor Warning: Incompatible color definition on input line 395.
 
 
-Underfull \vbox (badness 1478) detected at line 430
+Underfull \vbox (badness 10000) detected at line 395
  []
 
 
-Package xcolor Warning: Incompatible color definition on input line 430.
+Package xcolor Warning: Incompatible color definition on input line 395.
 
 [4]
 
-Package xcolor Warning: Incompatible color definition on input line 430.
+Package xcolor Warning: Incompatible color definition on input line 395.
 
 
-Package xcolor Warning: Incompatible color definition on input line 430.
+Package xcolor Warning: Incompatible color definition on input line 395.
+
+File: figure/corr-1.pdf Graphic file (type pdf)
+<use figure/corr-1.pdf>
+
+Package xcolor Warning: Incompatible color definition on input line 399.
 
 
-Package xcolor Warning: Incompatible color definition on input line 439.
+Package xcolor Warning: Incompatible color definition on input line 403.
 
 
-Package xcolor Warning: Incompatible color definition on input line 449.
+Package xcolor Warning: Incompatible color definition on input line 403.
 
-
-Package xcolor Warning: Incompatible color definition on input line 449.
-
-
-Package xcolor Warning: Incompatible color definition on input line 451.
-
-
-Package xcolor Warning: Incompatible color definition on input line 455.
-
-
-Package xcolor Warning: Incompatible color definition on input line 455.
-
-File: figure/viz750_2-1.pdf Graphic file (type pdf)
-<use figure/viz750_2-1.pdf>
 [5]
 
-Package xcolor Warning: Incompatible color definition on input line 476.
+Package xcolor Warning: Incompatible color definition on input line 422.
 
 
-Package xcolor Warning: Incompatible color definition on input line 488.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
 
-Package xcolor Warning: Incompatible color definition on input line 488.
+Package xcolor Warning: Incompatible color definition on input line 433.
 
-File: figure/viz3000-1.pdf Graphic file (type pdf)
-<use figure/viz3000-1.pdf>
+File: figure/regular_nearestinf-1.pdf Graphic file (type pdf)
+<use figure/regular_nearestinf-1.pdf>
+
+Package xcolor Warning: Incompatible color definition on input line 437.
+
+
+Package xcolor Warning: Incompatible color definition on input line 446.
+
+
+Package xcolor Warning: Incompatible color definition on input line 446.
+
+File: figure/regular_nearestinf-2.pdf Graphic file (type pdf)
+<use figure/regular_nearestinf-2.pdf>
+[6]
+
+Package xcolor Warning: Incompatible color definition on input line 450.
+
+
+Package xcolor Warning: Incompatible color definition on input line 461.
+
+
+Package xcolor Warning: Incompatible color definition on input line 461.
+
+File: figure/regular_cuminf-1.pdf Graphic file (type pdf)
+<use figure/regular_cuminf-1.pdf>
+[7]
+
+Package xcolor Warning: Incompatible color definition on input line 465.
+
+
+Package xcolor Warning: Incompatible color definition on input line 474.
+
+
+Package xcolor Warning: Incompatible color definition on input line 474.
+
+File: figure/regular_cuminf-2.pdf Graphic file (type pdf)
+<use figure/regular_cuminf-2.pdf>
+[8]
+
+Package xcolor Warning: Incompatible color definition on input line 478.
+
+
+Package xcolor Warning: Incompatible color definition on input line 490.
+
+
+Package xcolor Warning: Incompatible color definition on input line 490.
+
+File: figure/clustered1_5_nearestinf-1.pdf Graphic file (type pdf)
+<use figure/clustered1_5_nearestinf-1.pdf>
+[9]
+
+Package xcolor Warning: Incompatible color definition on input line 494.
+
+
+Package xcolor Warning: Incompatible color definition on input line 503.
+
+
+Package xcolor Warning: Incompatible color definition on input line 503.
+
+File: figure/clustered1_5_nearestinf-2.pdf Graphic file (type pdf)
+<use figure/clustered1_5_nearestinf-2.pdf>
+[10]
 
 Package xcolor Warning: Incompatible color definition on input line 507.
 
-[6]
 
-Package xcolor Warning: Incompatible color definition on input line 545.
-
-
-Package xcolor Warning: Incompatible color definition on input line 545.
-
-File: figure/correlation1-1.pdf Graphic file (type pdf)
-<use figure/correlation1-1.pdf>
-[7]
-
-Package xcolor Warning: Incompatible color definition on input line 583.
+Package xcolor Warning: Incompatible color definition on input line 518.
 
 
-Package xcolor Warning: Incompatible color definition on input line 608.
+Package xcolor Warning: Incompatible color definition on input line 518.
+
+File: figure/clustered1_5_cuminf-1.pdf Graphic file (type pdf)
+<use figure/clustered1_5_cuminf-1.pdf>
+[11]
+
+Package xcolor Warning: Incompatible color definition on input line 522.
 
 
-Package xcolor Warning: Incompatible color definition on input line 608.
+Package xcolor Warning: Incompatible color definition on input line 531.
 
 
-Overfull \vbox (0.81361pt too high) detected at line 608
- []
+Package xcolor Warning: Incompatible color definition on input line 531.
+
+File: figure/clustered1_5_cuminf-2.pdf Graphic file (type pdf)
+<use figure/clustered1_5_cuminf-2.pdf>
+[12]
+
+Package xcolor Warning: Incompatible color definition on input line 537.
 
 
-Package xcolor Warning: Incompatible color definition on input line 608.
-
-[8]
-
-Package xcolor Warning: Incompatible color definition on input line 608.
+Package xcolor Warning: Incompatible color definition on input line 549.
 
 
-Package xcolor Warning: Incompatible color definition on input line 608.
+Package xcolor Warning: Incompatible color definition on input line 549.
+
+File: figure/viz_several_500-1.pdf Graphic file (type pdf)
+<use figure/viz_several_500-1.pdf>
+[13]
+
+Package xcolor Warning: Incompatible color definition on input line 553.
 
 
-Package xcolor Warning: Incompatible color definition on input line 621.
+Package xcolor Warning: Incompatible color definition on input line 565.
 
 
-Package xcolor Warning: Incompatible color definition on input line 634.
+Package xcolor Warning: Incompatible color definition on input line 565.
 
-
-Package xcolor Warning: Incompatible color definition on input line 634.
-
-File: figure/density_vs_cuminf_plot-1.pdf Graphic file (type pdf)
-<use figure/density_vs_cuminf_plot-1.pdf>
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 685.
-[9] [10] [11]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 685.
-(./02_nndist_vs_sum_dists_bartlett.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 685.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 685.
+File: figure/viz_several_3000-1.pdf Graphic file (type pdf)
+<use figure/viz_several_3000-1.pdf>
+[14]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 570.
+[15]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 570.
+(./03_nearest_vs_cuminf_bartlett_raw.aux)
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 570.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 570.
  ) 
 Here is how much of TeX's memory you used:
- 23660 strings out of 494412
- 436549 string characters out of 6163918
- 573497 words of memory out of 5000000
- 27274 multiletter control sequences out of 15000+600000
- 551347 words of font info for 66 fonts, out of 8000000 for 9000
+ 23494 strings out of 494412
+ 433615 string characters out of 6163918
+ 575187 words of memory out of 5000000
+ 27162 multiletter control sequences out of 15000+600000
+ 531033 words of font info for 35 fonts, out of 8000000 for 9000
  350 hyphenation exceptions out of 8191
- 45i,12n,68p,10472b,393s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 45i,6n,68p,10474b,393s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on 02_nndist_vs_sum_dists_bartlett.pdf (11 pages).
+Output written on 03_nearest_vs_cuminf_bartlett_raw.pdf (15 pages).

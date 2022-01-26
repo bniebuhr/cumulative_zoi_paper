@@ -1,0 +1,82 @@
+---
+title: "Cumulative influence for reindeer"
+author: "Bernardo Niebuhr, Bram van Moorter"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  message=FALSE, 
+  warning=FALSE
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+```
+
+```{r load_packages, message=FALSE, warning=FALSE}
+#Load packages
+
+library(NinaR)
+library(rgrass7)
+library(raster)
+library(rgdal)
+library(sp)
+library(sf)
+library(tmap)
+
+
+# data manipulation
+library(dplyr)
+library(purrr)
+library(ggplot2) # for plot
+library(ggpubr) # for plot
+library(lsr) # for correlations
+
+# spatial packages
+library(mobsim)
+library(raster)
+library(landscapetools)
+library(sf)
+library(spatstat)
+
+# oneimpact package
+library(oneimpact)
+```
+
+```{r}
+
+
+grassConnect()
+use_sp()
+
+execGRASS("g.mapsets", mapset = c("p_prodchange_envpoints"))
+execGRASS("g.mapset", flags = "l")
+execGRASS("g.list", parameters = list(type = "raster"))
+execGRASS("g.list", parameters = list(type = "vector"))
+
+```
+
