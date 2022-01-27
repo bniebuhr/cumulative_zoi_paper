@@ -1,6 +1,5 @@
 ---
-title: Testing differences in results and time between neighborhood analysis in R
-  and GRASS
+title: Calculating the influence from the nearest feature in both R and GRASS GIS using the `oneimpact` pacakge
 author: "Bernardo Niebuhr"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output: 
@@ -32,9 +31,6 @@ library(oneimpact)
 Connect to GRASS.
 
 ```{r connect2GRASS}
-# should we run the heavy tests?
-heavy_test <- TRUE
-
 # start GRASS and connect to my mapset
 grassdir <- system("grass78 --config path", intern = T)
 gisDB <- "/data/grass"
@@ -85,7 +81,7 @@ terra::plot(cabins, col = "black")
 ```
 # Euclidean distance
 
-```{r}
+```{r eucidean}
 # R
 cabins_dist_r <- calc_influence_nearest(cabins, where = "R")
 
@@ -104,7 +100,7 @@ terra::plot(c(cabins_dist_r, cabins_dist_grass),
 ```
 # Log distance
 
-```{r}
+```{r log_dist}
 # R
 cabins_logdist_r <- calc_influence_nearest(cabins, transform = "log", log_base = 10, where = "R")
 
@@ -125,7 +121,7 @@ terra::plot(c(cabins_logdist_r, cabins_logdist_grass),
 
 # Square root distance
 
-```{r}
+```{r sqrt_dist}
 # R
 cabins_sqrtdist_r <- calc_influence_nearest(cabins, transform = "sqrt", where = "R")
 
@@ -148,7 +144,7 @@ terra::plot(c(cabins_sqrtdist_r, cabins_sqrtdist_grass),
 
 Example with ZoI = 1000m
 
-```{r}
+```{r exp_decay}
 # R
 cabins_exp_decay_r <- calc_influence_nearest(cabins, transform = "exp_decay", 
                                              zoi = 1000, where = "R")
@@ -174,7 +170,7 @@ terra::plot(c(cabins_exp_decay_r, cabins_exp_decay_grass),
 Example with ZoI = 1000m
 
 
-```{r}
+```{r bartlett}
 # R
 cabins_bartlett_r <- calc_influence_nearest(cabins, transform = "bartlett",
                                             zoi = 1000, where = "R")
@@ -199,7 +195,7 @@ terra::plot(c(cabins_bartlett_r, cabins_bartlett_grass),
 
 Example with ZoI = 1000m
 
-```{r}
+```{r gaussian}
 # R
 cabins_hnorm_decay_r <- calc_influence_nearest(cabins, transform = "half_norm",
                                                zoi = 1000, where = "R")
@@ -222,47 +218,47 @@ terra::plot(c(cabins_hnorm_decay_r, cabins_exp_decay_grass),
 
 ```{r}
 # Euclidean distance
-name_var <- "private_cabins_sub"
-execGRASS("r.resamp.filter", input = name_var, output = "test_neighborhood", filter = "gauss,box", radius = c(500,1500))
-
-execGRASS("r.mapcalc", expression = "private_cabins_binary = if(isnull(private_cabins_sub), 0, 1)", flags = "overwrite")
-
-execGRASS("r.neighbors", input = "private_cabins_binary", output = "test_neighborhood", size = 5, flags = "overwrite")
-
-Zone of Influence
-cumulative zone of influence
-cumulative affected area
-landcape effect, cumulative weight - "Miguet et al"
-Perceived disturbance
-
-multiply two layers referreing to two different scales of a variable density
-
-# visualize
-cabins_dens <- readRAST("test_neighborhood") %>% 
-  raster::raster() %>% 
-  terra::rast()
-
-terra::plot(cabins_dens, main = "Density")
-
-threshold = 0.05
-execGRASS("r.mapcalc", expression = "areas = if(test_neighborhood > 0.05, 1, 0)", flags = "overwrite")
-
-cabins_areas_affected <- readRAST("areas") %>% 
-  raster::raster() %>% 
-  terra::rast()
-
-terra::plot(cabins_areas_affected, main = "areas affected")
-
-#
-execGRASS("g.extension", extension = "r.area")
-
-execGRASS("r.clump", input = "areas", output = "patches", flags = "overwrite")
-
-cabins_areas_patches <- readRAST("patches") %>% 
-  raster::raster() %>% 
-  terra::rast()
-
-terra::plot(cabins_areas_affected, main = "patch areas affected")
+# name_var <- "private_cabins_sub"
+# execGRASS("r.resamp.filter", input = name_var, output = "test_neighborhood", filter = "gauss,box", radius = c(500,1500))
+# 
+# execGRASS("r.mapcalc", expression = "private_cabins_binary = if(isnull(private_cabins_sub), 0, 1)", flags = "overwrite")
+# 
+# execGRASS("r.neighbors", input = "private_cabins_binary", output = "test_neighborhood", size = 5, flags = "overwrite")
+# 
+# Zone of Influence
+# cumulative zone of influence
+# cumulative affected area
+# landcape effect, cumulative weight - "Miguet et al"
+# Perceived disturbance
+# 
+# multiply two layers referreing to two different scales of a variable density
+# 
+# # visualize
+# cabins_dens <- readRAST("test_neighborhood") %>% 
+#   raster::raster() %>% 
+#   terra::rast()
+# 
+# terra::plot(cabins_dens, main = "Density")
+# 
+# threshold = 0.05
+# execGRASS("r.mapcalc", expression = "areas = if(test_neighborhood > 0.05, 1, 0)", flags = "overwrite")
+# 
+# cabins_areas_affected <- readRAST("areas") %>% 
+#   raster::raster() %>% 
+#   terra::rast()
+# 
+# terra::plot(cabins_areas_affected, main = "areas affected")
+# 
+# #
+# execGRASS("g.extension", extension = "r.area")
+# 
+# execGRASS("r.clump", input = "areas", output = "patches", flags = "overwrite")
+# 
+# cabins_areas_patches <- readRAST("patches") %>% 
+#   raster::raster() %>% 
+#   terra::rast()
+# 
+# terra::plot(cabins_areas_affected, main = "patch areas affected")
 
 
 ```
