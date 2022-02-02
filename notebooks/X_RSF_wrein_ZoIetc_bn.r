@@ -21,7 +21,8 @@ execGRASS("g.list", parameters = list(type = "raster"))
 execGRASS("g.list", parameters = list(type = "vector"))
 
 set_region <- "wild_reindeer_areas@u_bram.van.moorter"
-execGRASS("g.region", parameters = list(vector=set_region, align="houses_10000@p_prodchange_envpoints"))
+execGRASS("g.region", vector = set_region, align = "houses_10000@p_prodchange_envpoints",
+          flags = "p")
 
 areas <- readVECT(vname=set_region) %>% 
   sf::st_as_sf()

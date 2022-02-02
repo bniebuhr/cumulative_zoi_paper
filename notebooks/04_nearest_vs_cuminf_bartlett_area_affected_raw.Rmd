@@ -1,0 +1,369 @@
+---
+title: "Simulating scenarios: comparing the the influence of the nearest feature with the cumulative influence"
+author: "Bernardo Niebuhr, Bram van Moorter"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+bibliography: cuminf_paper.bib
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  message=FALSE, 
+  warning=FALSE
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+```
+
+# Introduction
+
+Influence: Bartlett
+
+```{r load_packages, message=FALSE, warning=FALSE}
+#Load packages
+
+# data manipulation
+library(dplyr)
+library(purrr)
+library(ggplot2) # for plot
+library(ggpubr) # for plot
+library(lsr) # for correlations
+
+# spatial packages
+library(mobsim)
+library(terra)
+library(landscapetools)
+library(sf)
+library(spatstat)
+
+# oneimpact package
+library(oneimpact)
+```
+
+```{r parameters}
+# Set parameters for the simulation
+set.seed(12)
+
+# random, gradient, single center, multiple centers
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5_15", "clumped1_15", "clumped5_5", "clumped1_5")
+nfeat <- c(1, 5, 10, 20, 30, 40, 50, 80, 100, 150, 200, 500) # number of features
+res <- 100 # resolution
+ext <- 30000 # extent of the landscape
+nc <- c(5, 1) # number of centers or clusters for clumped
+wd <- c(0.15, 0.05)*ext # width of the "clusters"
+
+# ZoI values
+zoi_vals <- c(250, 500, 1000, 2000, 5000, 10000)
+
+# parameters
+parms_df1 <- expand.grid(method = methods, n_features = nfeat,
+                        centers = nc[1], width = wd) %>%  # regular, random, clumped5
+  dplyr::filter(!(method == "regular" & width == 1500)) %>% 
+  dplyr::filter(!(method == "random" & width == 1500)) # regular and random do not change with width
+parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
+                         centers = nc[2], width = wd) # parameters for clumped1
+parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
+  dplyr::arrange(n_features, method, desc(width))
+```
+
+```{r create_points_distances, eval=TRUE}
+# simulate points
+pts_100 <- parms_df %>% 
+  purrr::pmap(set_points, res = res,
+              extent_x = c(0, ext),
+              extent_y = c(0, ext),
+              buffer_around = 20000)
+
+# coordinates
+pts_coords <- pts_100 %>% 
+  purrr::map(first)
+
+# raster with points
+pts_all_rast_100 <- pts_100 %>% 
+  purrr::map(~ .[[2]])
+
+# vector with points, for plotting
+pts_vect_list <- pts_coords %>% 
+  purrr::map(sf::st_as_sf, coords = c(1:2), crs = terra::crs(pts_all_rast_100[[1]]))
+for(i in 1:length(pts_vect_list)) {
+  ind <- (i %% length(name))
+  if(ind == 0) ind <- 6
+  pts_vect_list[[i]]$spatial_dist <- name[ind]
+  ind_int <- ceiling(i / length(name))
+  pts_vect_list[[i]]$n <- nfeat[ind_int]
+}
+  
+pts_vect <- dplyr::bind_rows(pts_vect_list) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name),
+                labels = paste(LETTERS[spatial_dist], spatial_dist, sep = ": "))
+
+# landscape delimitation
+landscape <- st_bbox(c(xmin = 0, xmax = ext, ymax = 0, ymin = ext), crs = terra::crs(pts_all_rast_100[[1]])) %>% 
+  st_as_sfc()
+
+# plot 10
+pts_vect %>% 
+  dplyr::filter(n == 10) %>% 
+  ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+
+# plot 100
+pts_vect %>% 
+  dplyr::filter(n == 100) %>% 
+  ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+
+# plot 200
+pts_vect %>% 
+  dplyr::filter(n == 200) %>% 
+  ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+```
+
+```{r prepare_df}
+# crate scenarios, separating each point in a different
+# raster, to calculate distances
+create_scenarios <- parms_df %>% 
+  dplyr::rename(spatial_dist = method) %>% 
+  dplyr::mutate(
+    # mean isolation
+    mean_isolation = c(NA, NA, NA, NA, NA, NA, 
+                       map_dbl(pts_coords[7:length(pts_coords)], 
+                               oneimpact::mean_isolation, n_rand = 140, ext = c(0, ext))),
+    # mean distance between points
+    mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
+    # mean nearest neighbor distance
+    mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
+    # points coordinates, all together
+    points_100 = pts_all_rast_100
+  )
+
+# simplify tibble with scenarios and distances
+scenarios_dist <- create_scenarios %>% 
+  dplyr::mutate(
+    parms = purrr::map(spatial_dist, function(x) {
+      tibble::tibble(zoi = zoi_vals) })
+  ) %>% 
+  tidyr::unnest(parms)
+
+# map(scenarios_dist$points_rast, terra::res)
+```
+
+
+```{r calc_cuminf, eval=FALSE}
+filter_type <- "bartlett"
+
+maps_cuminf <- purrr::map2(scenarios_dist$points_100, scenarios_dist$zoi, function(x, y) {
+  print(paste("running zoi", y, "..."))
+  calc_influence_cumulative(x = x, type = filter_type, zoi = y)
+})
+
+maps_cuminf <- map(maps_cuminf, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_cuminf, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_cuminf)) terra::writeRaster(maps_cuminf[[i]],
+                                                   filename = sprintf("../data/test/n_cuminf%03d.tif", i), 
+                                                   overwrite = TRUE)
+```
+
+```{r load_cuminf, eval=TRUE, echo=FALSE}
+maps_cuminf <- list()
+cuminf_rasts_full <- list.files("../data/test/", pattern = "^n_cuminf", full.names = T)
+for(i in 1:nrow(scenarios_dist)) maps_cuminf[[i]] <- terra::rast(cuminf_rasts_full[[i]])
+```
+
+```{r calc_nearest, eval=FALSE, echo=TRUE}
+# calculate cumulative influence
+maps_nearestinf <- purrr::map2(scenarios_dist$points_100, scenarios_dist$zoi, function(x,y) {
+  print(paste("running zoi", y, "..."))
+  calc_influence_nearest(x = x, transform = filter_type, zoi = y)
+  })
+
+maps_nearestinf <- map(maps_nearestinf, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_nearest, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_nearestinf)) terra::writeRaster(maps_nearestinf[[i]],
+                                                       filename = sprintf("../data/test/n_nearest%03d.tif", i),
+                                                       overwrite = TRUE)
+```
+
+```{r load_nearest, eval=TRUE, echo=FALSE}
+maps_nearestinf <- list()
+nearest_rasts_full <- list.files("../data/test/", pattern = "^n_nearest", full.names = T)
+for(i in 1:nrow(scenarios_dist)) maps_nearestinf[[i]] <- terra::rast(nearest_rasts_full[[i]])
+```
+
+```{r corr}
+scenarios_dist <- scenarios_dist %>% 
+  dplyr::mutate(
+    rast_nearest = maps_nearestinf,
+    rast_cuminf = maps_cuminf,
+    corr = purrr::map2(rast_nearest, rast_cuminf, function(x, y)
+      try(cor(terra::values(x), terra::values(y))))) %>% 
+  tidyr::unnest(corr) %>% 
+  dplyr::mutate(spatial_dist = ifelse(spatial_dist == "mobsim", 
+                                      paste0("clumped", centers, "_", as.integer(width/ext*100)),
+                                      as.character(spatial_dist)),
+                spatial_dist = factor(spatial_dist, levels = name))
+  # dplyr::mutate(labels = paste(LETTERS[1:length(name)], name[c(1,2,3,4,5,6)], sep = ": "))
+
+# plot
+dat_isol <- scenarios_dist %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation),
+                   mean_dist = unique(mean_dist),
+                   mean_nndist = unique(mean_nndist)) #%>% 
+  # dplyr::mutate(min_dist = map_dbl(pts_coords, function(x) min(dist(x))),
+  #               max_dist = map_dbl(pts_coords, function(x) max(dist(x))),
+  #               min_nndist = map_dbl(pts_coords, function(x) min(spatstat.geom::nndist(x))),
+  #               iso = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext)),
+  #               size_cluster = c(NA, NA, wd[1], wd[1], wd[2], wd[2]))
+
+scenarios_dist %>% 
+  # dplyr::filter(spatial_dist == "A: regular") %>%
+  dplyr::filter(n_features == 100) %>% 
+  ggplot(aes(zoi, abs(corr))) +
+  # geom_vline(data = dat_isol, aes(xintercept = min_dist/2), linetype = 2) +
+  geom_vline(aes(xintercept = width*1.96), linetype = 2, color = "darkgrey") +
+  geom_point() +
+  geom_line() +
+  ylim(00, 1) +
+  facet_wrap(~spatial_dist, scales = "free_y") +
+  labs(x = "Zone of Influence", 
+       y = "Correlation",
+       color = "Spatial distribution",
+       linetype = "Mean n.n. distance") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.grid.minor = element_blank(), panel.grid.major = element_blank()) #+
+  scale_x_continuous(trans='log10')
+```
+
+The point of inflection is related to the size of the clusters - when the ZoI gets to this value,
+the correlation between nearest and cumulative influence is minimum. Beyond that, the correlation
+starts to grow again, because the influence of the cluster of features starts to increase far from the
+cluster in a way that is similar between the two influence measures.
+However, when there are several clusters (panel C and E, instead of only one cluster), there might be some 
+variation in this value, and the curve might increase in a non-linear way, depending on the distance between 
+clusters (e.g. distance between villages or urban centers).
+
+```{r regular_nearestinf}
+which_scenarios <- c(0)
+indices1 <- which_scenarios*length(zoi_vals) + 2:5
+indices2 <- which_scenarios*length(zoi_vals) + 6:length(zoi_vals)
+to_viz1 <- do.call(c, scenarios_dist$rast_nearest[indices1])
+names(to_viz1) <- paste(rep("nearest", nlyr(to_viz1)), zoi_vals[2:5],
+                       sep = ": ")
+plot(to_viz1, nc = 4)
+
+# show only biger scales
+to_viz2 <- do.call(c, scenarios_dist$rast_nearest[indices2])
+names(to_viz2) <- paste(rep("nearest", nlyr(to_viz2)), zoi_vals[6:length(zoi_vals)], 
+                        sep = ": ")
+plot(to_viz2, nc = 4)
+```
+
+```{r regular_cuminf}
+which_scenarios <- c(0)
+indices1 <- which_scenarios*length(zoi_vals) + 2:5
+indices2 <- which_scenarios*length(zoi_vals) + 6:length(zoi_vals)
+to_viz1 <- do.call(c, scenarios_dist$rast_cuminf[indices1])
+names(to_viz1) <- paste(rep("cumulative", nlyr(to_viz1)), zoi_vals[2:5],
+                       sep = ": ")
+plot(to_viz1, nc = 4)
+
+# show only biger scales
+to_viz2 <- do.call(c, scenarios_dist$rast_cuminf[indices2])
+names(to_viz2) <- paste(rep("cumulative", nlyr(to_viz2)), zoi_vals[6:length(zoi_vals)], 
+                        sep = ": ")
+plot(to_viz2, nc = 4)
+```
+
+```{r clustered1_5_nearestinf}
+which_scenarios <- c(6) - 1
+which_n <- which(nfeat == 10) - 1
+indices1 <- which_scenarios*length(zoi_vals) + which_n*length(name)*length(zoi_vals) + 1:length(zoi_vals)
+
+to_viz1 <- do.call(c, scenarios_dist$rast_nearest[indices1])
+names(to_viz1) <- paste(rep("nearest", nlyr(to_viz1)), zoi_vals[1:length(zoi_vals)],
+                       sep = ": ")
+plot(to_viz1, nc = 3)
+```
+
+```{r clustered1_5_cuminf}
+which_scenarios <- c(6) - 1
+which_n <- which(nfeat == 10) - 1
+indices1 <- which_scenarios*length(zoi_vals) + which_n*length(name)*length(zoi_vals) + 1:length(zoi_vals)
+
+to_viz1 <- do.call(c, scenarios_dist$rast_cuminf[indices1])
+names(to_viz1) <- paste(rep("cumulative", nlyr(to_viz1)), zoi_vals[1:length(zoi_vals)],
+                       sep = ": ")
+plot(to_viz1, nc = 3)
+```
+
+Visualize several scenarios
+
+```{r viz_several_500}
+which_scenarios <- c(0:2, 5)
+indices <- which_scenarios*length(zoi_vals) + 5
+to_viz <- do.call(c, c(scenarios_dist$rast_nearest[indices], scenarios_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_scenarios+1], 2), 
+                       rep(c("nearest", "CumInf"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+
+```{r viz_several_3000}
+which_scenarios <- c(0:2, 5)
+indices <- which_scenarios*length(zoi_vals) + 11
+to_viz <- do.call(c, c(scenarios_dist$rast_nearest[indices], scenarios_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_scenarios+1], 2), 
+                       rep(c("nearest", "CumInf"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```

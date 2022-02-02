@@ -48,7 +48,6 @@ library(sp)
 library(sf)
 library(tmap)
 
-
 # data manipulation
 library(dplyr)
 library(purrr)
@@ -67,10 +66,12 @@ library(spatstat)
 library(oneimpact)
 ```
 
-```{r}
-
-
-grassConnect()
+```{r connect_grass}
+ms <- "u_bb_cuminf"
+grassConnect(mapset = ms)
+set_region <- "wild_reindeer_areas@u_bram.van.moorter"
+execGRASS("g.region", vector = set_region, align = "houses_10000@p_prodchange_envpoints",
+          flags = "p")
 use_sp()
 
 execGRASS("g.mapsets", mapset = c("p_prodchange_envpoints"))
