@@ -1,0 +1,112 @@
+---
+title: "Appendix A"
+subtitle: "Deriving the cumulative influence for line and polygon representations of infrastructure"
+author: "Bernardo Niebuhr, Bram van Moorter, Manuela Panzacchi"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+abstract: | 
+  In this document, we derive the influence of the nearest feature and the cumulative influence of 
+  multiple infrastructure for types of infrastructure and spatial variables that are represented
+  as lines (e.g. roads, power lines) or polygons (e.g. dams, mining sites). This complements the derivation
+  for point-type infrastructure as presented in Niebuhr et al. *Estimating the cumulative impacts and 
+  the zone of influence from multiple anthropogenic infrastructure on biodiversity.*
+bibliography: cuminf_bib.bib
+output:
+  NinaR::jensAnalysis:
+  highlight: tango
+fig_caption: yes
+toc: yes
+---
+
+# Introduction
+
+In the main text, we derived the estimation of the cumulative influence of multiple infrastructure under different assumptions, but only did so for infrastructure that can be represented as points, such as houses, cabins, or wind turbines. Here we complement it by deriving similar equations for linear infrastructure (e.g. roads, trails, power lines) and infrastructure or landscape variables represented by polygons (mining sites, hydro dams, deforestation areas or polygons outlining specific land cover and land use types).
+
+# Derivation of influence measures for multiple infrastructure features 
+
+We start from the same baseline presented in the main text: we use as an example of statistical model a habitat-selection function (HSF; Fieberg et al., 2021). Copying here eq. 1 from the main text, the HSF is defined as:
+
+\begin{equation} 
+\centering
+\label{eqn:HSF}
+w(\textbf{X}) = \exp \left( \beta_0 + \overbrace{\beta_1 X_1}^\text{A) Infrastructure type 1} + \overbrace{\beta_2 X_2}^\text{B) Infrastructure type 2} + \underbrace{\beta_{12} X_1 X_2}_\text{D) Interaction infrastructure types 1 and 2} + ... + \overbrace{\beta_k X_k}^\text{C) Infrastructure type k} \right)
+\end{equation}
+
+where $\textbf{X} = X_1,X_2, ...,  X_k$ correspond to $k$ different types of infrastructure (or other landscape modifications or spatiotemporal variables) and $\beta_k$ represents the magnitude of the impact (coefficient or effect size) of the infrastructure of type $k$.
+
+## Influence function
+
+We assume that in the landscape there are $n_k$ features of the same type of infrastructure $k$, and let the influence of the feature $i$ of an infrastructure \textit{k} be an influence function $\phi_{i_k} = f(d_{i_k}, ZoI_k)$, where $d_{i_k}$ is the distance to a feature ($i_k$) of infrastructure type $k$ and $ZoI_k$ is its zone of influence. As we show in the main text, for point-like infrastructure we can sum the effect of each feature on animal space use, so that the linear terms in equation \ref{eqn:HSF} become:
+
+\begin{equation}
+\label{eqn:HSFtermPoint}
+    \beta_k X_k = \sum_{i=1}^{n_k} \beta_{i_k} \phi_{i_k}.
+\end{equation}
+
+Likewise, for linear infrastructure we can integrate the term
+
+\begin{equation}
+\label{eqn:HSFtermLine}
+    \beta_k X_k = \int_{L} \beta_{k}(l) \ \phi_{k}(l; d_{i_k}, ZoI_k) dl
+\end{equation}
+
+where $dl$ denotes the length on an infinitesimal infrastructure segment and $L$ is the
+total length of linear infrastructure of type $k$ in the study area. 
+For polygon variables we can similarly integrate the term, but on two dimensions $(x, y)$:
+
+\begin{equation}
+\label{eqn:HSFtermPolygon}
+    \beta_k X_k = \iint_{\Omega} \beta_{k}(x,y) \ \phi_{k}(x, y; d_{i_k}, ZoI_k) \ dx \ dy
+\end{equation}
+
+where $\Omega$ is the whole study area.
+
+## Influence of the nearest feature
+
+To estimate the influence of the nearest feature, we showed that, for point-like infrastructure,
+one generally considers $\beta_i = 0$ for all $i > 1$ (where the features are ordered by increasing distance), i.e., only the nearest feature is assumed to influence a given site. We can make equivalent assumptions for linear and area infrastructure by considering only the nearest (orthogonal) segment of linear infrastructure or the closest edge of the closest polygon
+to influence processes in a given location. In such a way, their influence is similar to that of a point. As a consequence, equation 3 from the main text keeps valid to represent the influence of the nearest feature:
+
+\begin{equation}
+\label{eqn:HSFnearest}
+\begin{split}
+    \beta_k X_k & = \beta_{1_k} \phi_{1_k} \\
+                & = \beta_{k} \phi_{nearest_k}.
+\end{split}                
+\end{equation}
+
+## Cumulative influence of multiple features
+
+To derive the cumulative influence, for point-like infrastructure we assumed that all features exert
+the same influence, so that $\beta_1 =\beta_2 = ... = \beta_k = \beta$ for all features. If we do similar assumptions for lines and polygons -- that all infinitesimal segments $dl$ present the same influence over $L$ and that all pieces of area of the polygons present similar influence around them, eq. 4 from the main text remains valid for these types of variables:
+
+\begin{equation}
+\label{eqn:HSFcuminf}
+\begin{split}
+    \beta_k X_k & = \beta_k \int_{L} \phi_{k}(l) \ dl \\
+                & = \beta_k \phi_{cum_k} \\
+                & \text{and} \\
+    \beta_k X_k & = \beta_k \iint_{\Omega} \phi_{k}(x, y) \ dx \ dy \\
+                & = \beta_k \phi_{cum_k}
+\end{split}
+\end{equation}
+
+The only difference here regards how the cumulative influence function $\phi_{cum}$ is defined -- as a sum or an integral over 1 or 2 dimensions. 
+
+# Calculation of the cumulative influence
+
+In theory, the calculation of the cumulative influence function $\phi_{cum}$ for a given study area $\Omega$ requires the computation of eq. 4 from the main text or eq. \ref{eqn:HSFcuminf}, 
+which might be 
+difficult and computationally challenging for large areas with many infrastructure features spread non-regularly in space. To overcome that limitation, we implemented this calculation by constructing filters (or weighing matrices; see Miguet et al., 2017) that follow an assumed decaying function (see the functions in Fig. 1 of the main text for examples) and used them on moving window/neighborhood analyses over the input infrastructure layers. This is similar to the approaches presented by Miguet et al. (2017) and Gilleland (2013). We do not show it here, but, if the filter is set appropriately to include most of the area within which the influence function is positive (e.g. larger than 0.05 or 0.01), the result of applying eq. 4 or eq. \ref{eqn:HSFcuminf} presents a correlation $> 0.99$ with the 
+result of the neighborhood analysis.
+
+**Should I demonstrate it here for examples such as the ones in Appendix B?**
+
+# References
+
+Fieberg, J., Signer, J., Smith, B., & Avgar, T. (2021). A 'How to' guide for interpreting parameters in habitat‐selection analyses. Journal of Animal Ecology, 90(5), 1027--1043. https://doi.org/10.1111/1365-2656.13441
+
+Gilleland, E. (2013). Two-dimensional kernel smoothing: Using the R package smoothie. NCAR Technical Note, TN-502+STR, 17pp. https://doi.org/10.5065/D61834G2
+
+Miguet, P., Fahrig, L., & Lavigne, C. (2017). How to quantify a distance‐dependent landscape effect on a biological response. Methods in Ecology and Evolution, 8(12), 1717–1724. https://doi.org/10.1111/2041-210X.12830
+
