@@ -1,5 +1,5 @@
 ---
-title: "Simulating scenarios: comparing the the influence of the nearest feature with the cumulative influence"
+title: "Simulating scenarios: comparing the the influence of the nearest feature with the cumulative influence of multiple features"
 author: "Bernardo Niebuhr, Bram van Moorter"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 geometry: margin=2cm

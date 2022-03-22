@@ -42,7 +42,7 @@ tm_shape(areas) +
 tm_layout(legend.outside = TRUE)
   
 
-execGRASS("v.to.rast", parameters = list(input="houses@p_prodchange_envpoints", output="houses_rast", use="cat"), flags=c("overwrite"))
+execGRASS("v.to.rast", parameters = list(input="houses@p_prodchange_envpoints", output="houses_rast", use="val"), flags=c("overwrite"))
 execGRASS("r.grow.distance", parameters = list(input="houses_rast", distance="dist_houses"), flags=c("overwrite"))
 
 dist_houses <- raster(readRAST("dist_houses", plugin=FALSE))
