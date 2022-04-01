@@ -8,7 +8,7 @@ abstract: |
   In this document we fit habitat selection models to wild reindeer GPS data to assess if and how 
   the impacts of multiple infrastructure affect mountain reindeer (*Rangifer tarandus*) habitat selection 
   during summer. We describe the modeling approach and present the results and predictions from
-  the fitted models. This document complements the description of material and methods and the results
+  the fitted models. This document complements the description of materials and methods and the results
   presented in in the main text of Niebuhr et al. *Estimating the cumulative impacts and the zone of influence from 
   multiple anthropogenic infrastructure on biodiversity.*
 # bibliography: cuminf_bib.bib
@@ -225,7 +225,8 @@ and 2010. Reindeer were immobilized from helicopter
 <!-- [see details in @evans_physiologic_2013]  -->
 (see details in Evans et al., 2013) and equipped with GPS collars with drop-off
 system. To regularize the fix rate among collars, we used 1 reindeer
-position every 6 hours. We analyzed only the data from July, selected
+position every 6 hours, summing up a total of 7478 positions for all individuals. 
+We analyzed only the data from July, selected
 here as a month representative of the summer, to avoid including
 reindeer positions during either the end of the calving season or during
 rut and autumn migration. For detailed data cleaning and preparation
@@ -239,7 +240,7 @@ use and available locations was then annotated with environmental
 spatial data to assess the effects of the different infrastructure on
 reindeer space use.
 
-```{r plot_infra, eval=TRUE, echo=FALSE, fig.cap="Main anthropogenic infrastructure in the Hardangervidda reindeer area, used to illustrate the area. Only private cottages and large tourist cabins were included in the analysis."}
+```{r plot_infra, eval=TRUE, echo=FALSE, fig.cap="Main anthropogenic infrastructure in the Hardangervidda reindeer area, used to illustrate the landscape context. Only private cottages and large tourist cabins were included in the analysis."}
 # plot
 map1 <- tm_shape(study_area) +
   tm_borders() + 
@@ -375,18 +376,18 @@ map_all
 
 The locations of most types of infrastructure in Hardangervidda are correlated.
 Roads occur mostly in the lower parts of the area -- and are correlated
-with the elevation and terrain variation -- while other infrastructure
+with elevation and terrain ruggedness -- while other infrastructure
 occur closely together (e.g. small roads and cabins). For this reason,
-and for illustration purposes, for the analyses presented here we
+and for illustration purposes, in the analyses presented here we
 considered only the effects of private cottages and large tourist cabins.
-
 The spatial data sources and details are described in
 <!-- @panzacchi_searching_2015.  -->
 Panzacchi et al. (2015).
+
 First, the vector representation for each kind of
 infrastructure was rasterized using a grid of 100 m resolution for an
 extent which included a buffer of 50 km around the study area; 
-the buffer around the area was
+the buffer was
 used to avoid edge effects in the influence measures' calculation. Then,
 both the influence of the nearest feature and the cumulative influence
 measures were calculated. Since the infrastructure considered here
@@ -420,7 +421,7 @@ understand patterns of bio-climatic-geographical variation across the
 country 
 <!-- [@bakkestuen_step-less_2008].  -->
 (Bakkestuen et al., 2008).
-We used the NORUT land cover map
+We used the NORUT land cover map (Johansen, 2009)
 with 30 m resolution and 25 vegetation classes, which we further grouped
 for modeling purposes (see the final classes in Table C3). The four
 bio-climatic principal components represent gradients of (1) PC1 - continentality,
@@ -557,11 +558,12 @@ infrastructure type. Given that the influence measures could assume 2
 representations (cumulative, nearest) and follow 4 different functions
 (threshold, linear, Gaussian, exponential decay) with 8 distinct ZoI
 values (100 m, 250 m, 500 m, 1 km, 2.5 km, 5 km, 10 km, 20 km), for each
-infrastructure type we fitted 64 HSFs. Additionally, we also fit HSFs
+infrastructure type we fitted 64 HSFs. Additionally, we also fitted HSFs
 considering the log-distance to the nearest feature, which is a
 predictor commonly used in statistical models to assess the impacts of
-anthropogenic infrastructure on biodiversity. Single-infrastructure HSFs
-were fit with the `multifit` approach (Huais, 2018). HSFs were
+anthropogenic infrastructure on biodiversity (e.g. Torres et al., 2016; 
+Polfus et al., 2011). Single-infrastructure HSFs
+were fit with the `multifit` approach in R (Huais, 2018). HSFs were
 compared though the Akaike information criterion (AIC), and for each
 infrastructure type the 15 influence measures that better explained
 habitat selection (lower AIC) were chosen to be included in the
@@ -584,9 +586,10 @@ related to the infrastructure influence variables
 though the coefficient values were not a criterion for selecting the
 most parsimonious influence variables, they are important to indicate
 consistency in the influence measures across the scales. If the
-coefficient changes signs (from avoidance to selection, for instance) as
-the ZoI increases, this might be a warning be careful in the evaluation
-of the most parsimonious ZoI. Since the continuous covariates were
+coefficient changes signs as
+the ZoI increases, representing a shift from avoidance to selection, 
+this might be a warning to be careful in the evaluation
+of the most plausible ZoI. Since the continuous covariates were
 standardized for model fitting, their model coefficients were 
 rescaled back them to the original covariate range, for interpretation
 purposes and prediction.
@@ -1278,9 +1281,10 @@ consequence, there is not so much difference between what the cumulative
 and nearest influences represent (as for the private
 cottages), since the influence function of each feature only start
 to accumulate for larger ZoIs. Therefore, 
-the ZoI with smaller AIC is closer between cumulative and nearest influence measures.
+the ZoI corresponding to smaller AIC is closer between models including 
+cumulative and nearest influence measures.
 This is in accordance with the demonstrations
-from Appendix B, where we showed that for landscapes with sparse 
+from Appendix B, where we showed that, for landscapes with sparse 
 distribution of features and small ZoI, $\phi_{nearest}$ and $\phi_{cum}$
 are highly correlated. 
 Second, large tourist cabins are used very differently by tourists than
@@ -1289,7 +1293,7 @@ time, which consequently use a much higher area around the cabins,
 compared to single private cottage. As a consequence, the ZoI of large
 tourist cabins tend to be higher.
 
-As for private cottages, in the models with tourist cabins the beta was also
+As for private cottages, in the models with tourist cabins the coefficients were also
 consistently negative, representing reindeer avoidance to public tourist cabins.
 
 ```{r fit_models_univariate_coxph_checkAIC_plot2, echo=FALSE, eval=TRUE, fig.cap="Model AIC (A) and coefficients (B) estimated for the influence of large tourist cabins in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative influence and influence of the nearest feature for different influence shapes and ZoI values (see the x axis in B for some of the candidate ZoI values, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI at which the AIC was minimal for each type and function of the influence measure."}
@@ -1507,26 +1511,26 @@ xtable::xtable(moddf)
 The most parsimonious multi-infrastructure model included the
 cumulative influence of private cottages with threshold decay and ZoI =
 10 km and the cumulative influence of multiple tourist cabins with
-exponential decay and ZoI = 20 km ($\Delta AIC = 26.9$ for the 
+exponential decay and ZoI = 20 km ($\Delta AIC = 26.9$ from the 
 second-ranked model, $wAIC = 1$; Table C2). Notice that, as
 parameterized here, for the tourist cabins an exponential decay with ZoI
 of 20 km means that the influence of cabins decrease to half of its
 maximum value at ca. 5 km from the infrastructure
-(exponential half life is \~ $ZoI/4$ here). The best ranked model with a
+(exponential half life is \~ $ZoI/4$ here). The most plausible model with a
 covariate for the influence of the nearest feature was ranked 26^th^ in
-the model selection ($\Delta AIC = 921$), and the best ranked model including the
+the model selection ($\Delta AIC = 921$), and the most likely model including the
 log-distance to the nearest feature was ranked 44^th^ ($\Delta AIC = 1197$; Table C2). This
 presents a strong support for the cumulative impacts of both private
-cottages and tourist cabins on the reindeer habitat selection in
+cottages and tourist cabins on reindeer habitat selection in
 Hardangervidda.
 
 ```{r model_AIC_table, echo=FALSE, eval=TRUE}
-kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_2", 'Infrastructure variables included in the most parsimonious models. For each model we show the type of influence (``cumulative", ``nearest"), the influence function (``exponential decay", ``gaussian decay", ``threshold", ``Bartlett or linear decay"), and the ZoI (in km) for that covariate included in the model. For each model we also present the AIC, the difference in AIC to the most parsimonious model (dAIC), and the AIC weight. The last lines show the most parsimonious model which included any variable with the influence of the nearest feature and the log-distance to the nearest feature (in this case, for tourist cabins).')) %>%
+kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_2", 'Infrastructure variables included in the most parsimonious models. For each model we show the type of influence (``cumulative", ``nearest"), the influence function (``exponential decay", ``gaussian decay", ``threshold", ``Bartlett or linear decay"), and the ZoI (in km) for that covariate included in the model. For each model we also present the AIC, the difference in AIC to the most likely model (dAIC), and the AIC weight. The last lines show the most plausible model which included any variable with the influence of the nearest feature and the log-distance to the nearest feature (in this case, for tourist cabins). Models also included bio-climatic variables and land cover (see Table C3).')) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
 
-Looking closely to the most parsimonious multi-infrastructure HSF (after
-rescaling the coefficients back to the original variation of the infrastructure
+Looking closely to the most plausible multi-infrastructure HSF (after
+rescaling the coefficients back to the original range of variation of the infrastructure
 influence predictors), we see both infrastructure are avoided by
 reindeer. Their influence vary differently across space since their
 influence functions and ZoI differ -- a threshold function with 10 km
@@ -1598,7 +1602,7 @@ xtable::xtable(moddf)
 ```
 
 ```{r model_coef_table, echo=FALSE, eval=TRUE}
-kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_3", 'Magnitude of the impact (model coefficients) of the most parsimonious model of space use for reindeer, including private cottages and tourist cabins. The table show the coefficient estimates (scaled back to the scale of variation of the original data), their standard error (SE, in the standardized scale of the variables), and the significance (p).')) %>%
+kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_3", 'Magnitude of the impact (model coefficients) of the most parsimonious model of space use for reindeer, including private cottages and tourist cabins. The table show the coefficient estimates (scaled back to the scale of variation of the original data), their standard error (SE, in the standardized scale of the variables), and the significance (p). ``pc" are the bio-climatic principal components and ``poly" are the coefficients of a quadratic function of pc.')) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
 
@@ -1745,7 +1749,7 @@ ggsave("reindeer_zoi_impact_single_multiple_features.png", plot = g7,
        units = "cm", dpi = 300)
 ```
 
-```{r beta_and_zoi_plot, echo=FALSE, eval=TRUE, fig.cap='Impact of private cottages and tourist cabins considering only 1 feature, the median number of features (103 for private cottages, 0.38 for tourist cabins), and the maximum number of each type of feature (2664 for cottages, 5 for cabins), given their respective influence functions and ZoI. The impact presented here is the multiplication between the magnitude of the impact (the model coefficients) and the cumulative influence variable (eq. 4 in the main text). The impact of only one private cottage is negligible. At their median values, the impacts of private and public cabins are comparable, while at their maximum the cumulative impact of private cottages might be higher than that of tourist cabins.'}
+```{r beta_and_zoi_plot, echo=FALSE, eval=TRUE, fig.cap='Impact of private cottages and tourist cabins considering (A) only 1 feature, (B) the median number of features (103 for private cottages, 0.38 for tourist cabins), and (C) the maximum number of each type of feature (2664 for cottages, 5 for cabins), given their respective influence functions and ZoI. The impact presented here is the multiplication between the magnitude of the impact (the model coefficients) and the cumulative influence variable (eq. 4 in the main text). The impact of only one private cottage is negligible (A). At their median values, the impacts of private and public cabins are comparable (B), while at their maximum the cumulative impact of private cottages might be higher than that of tourist cabins (C).'}
 g6
 ```
 
@@ -2248,13 +2252,20 @@ Fieberg, J., Signer, J., Smith, B., & Avgar, T. (2021). A ‘How to’ guide for
 
 Huais, P. Y. (2018). multifit: An R function for multi-scale analysis in landscape ecology. Landscape Ecology, 33(7), 1023–1028. https://doi.org/10.1007/s10980-018-0657-5
 
+Johansen, B. E. (2009). Vegetasjonskart for Norge basert på LANDSAT TM/ETM+ data. (No. 4; p. 87). Northern Research Institute, NORUT.
+
 Kutner, M. H. (Ed.). (2005). Applied linear statistical models (5th ed). McGraw-Hill Irwin.
 
 Laforge, M. P., Vander Wal, E., Brook, R. K., Bayne, E. M., & McLoughlin, P. D. (2015). Process-focussed, multi-grain resource selection functions. Ecological Modelling, 305, 10–21. https://doi.org/10.1016/j.ecolmodel.2015.03.003
 
 Panzacchi, M., Van Moorter, B., Strand, O., Loe, L. E., & Reimers, E. (2015). Searching for the fundamental niche using individual-based habitat selection modelling across populations. Ecography, 38(7), 659–669. https://doi.org/10.1111/ecog.01075
 
+Polfus, J. L., Hebblewhite, M., & Heinemeyer, K. (2011). Identifying indirect habitat loss and avoidance of human infrastructure by northern mountain woodland caribou. Biological Conservation, 144(11), 2637–2646. https://doi.org/10.1016/j.biocon.2011.07.023
+
 R Core Team (2021). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna,
 Austria. URL https://www.R-project.org/.
+
+Torres, A., Jaeger, J. A. G., & Alonso, J. C. (2016). Assessing large-scale wildlife responses to human infrastructure development. Proceedings of the National Academy of Sciences, 113(30), 8472–8477. https://doi.org/10.1073/pnas.1522488113
+
 
 <!-- <div id="refs"></div> -->
