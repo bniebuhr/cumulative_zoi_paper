@@ -43,7 +43,7 @@ palette(ninaPalette())
 
 Influence: Bartlett
 
-```{r load_packages, message=FALSE, warning=FALSE}
+```{r load_packages, echo=FALSE, message=FALSE, warning=FALSE}
 #Load packages
 
 # data manipulation
