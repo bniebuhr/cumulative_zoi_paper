@@ -1,0 +1,1598 @@
+---
+title: "Appendix 3"
+subtitle: "Cumulative influence of infrastructure on reindeer space use: fitting habitat selection models"
+author: "Bernardo Niebuhr, Bram van Moorter, Manuela Panzacchi"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+geometry: margin=2cm
+abstract: |
+  In this document we fit habitat selection models to wild reindeer GPS data to assess if and how 
+  the effects of multiple infrastructure affect mountain reindeer (*Rangifer tarandus*) space use 
+  during summer. We describe the modeling approach and present the results and predictions from
+  the fitted models.
+# bibliography: cuminf_bib.bib
+#cls: journal-of-applied-ecology.cls
+output:
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+header-includes:
+  \usepackage{float}
+  \usepackage{caption}
+  \DeclareCaptionLabelFormat{Sformat}{#1 A3.#2}
+  \captionsetup[figure]{labelformat=Sformat}
+  \captionsetup[table]{labelformat=empty}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+library(kableExtra)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  fig.pos = 'H',
+  message=FALSE,
+  warning=FALSE,
+  options(scipen=999)
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+
+# captions
+library(captioner)
+caption <- captioner("Table A3.", FALSE)
+
+# Connect to PostGIS
+source("~/.pgpass")
+
+##Or just use DBI::dbConnect
+NinaR::postgreSQLConnect(
+  host = "gisdata-db.nina.no",
+  dbname = "gisdata",
+  username = pg_username,
+  password = pg_password,
+  bigint  = "integer"
+)
+
+rm(list = c("pg_username", "pg_password"))
+```
+
+```{r load_packages, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+#Load packages
+library(NinaR)
+
+# data manipulation
+library(dplyr)
+library(purrr)
+library(ggplot2) # for plot
+library(ggpubr) # for plot
+library(cowplot) # for plot
+
+# spatial packages
+library(rgrass7)
+library(terra)
+library(sf)
+library(tmap)
+require(RPostgres)
+require(rpostgis)
+
+# analysis
+library(survival)
+
+# oneimpact package
+library(oneimpact)
+```
+
+# Introduction
+
+In this document we describe the procedures to fit habitat selection
+models to wild reindeer GPS data and assess if and how the effects of
+multiple infrastructure affect mountain reindeer (*Rangifer tarandus*)
+space use during summer. We first briefly describe the study area, the
+GPS data handling, and the environmental variables used in the analysis.
+For a more detailed presentation, please see @panzacchi_searching_2015.
+We then describe the calculation of the infrastructure-related
+covariates using both the measures of cumulative influence and the
+influence of the nearest feature. These measures quantify the zone of
+influence (ZoI) as well as how the influence varies with the distance to
+infrastructure. Finally, we describe the structure of the statistical
+models and the fitting procedures and present the results in details.
+
+# Material and Methods
+
+## Study area
+
+```{r read_vectors, eval=TRUE, echo=FALSE, results="hide", message=FALSE, warning=FALSE}
+# read vector files
+vects <- list.files("../data/analysis_GPS/", pattern = "_v.shp|_v.gpkg", 
+                    full.names = TRUE)
+
+# norway
+# no <- rnaturalearthdata::countries50[rnaturalearthdata::countries50$ADMIN == "Norway",] %>% 
+#   sf::st_as_sf() %>% 
+#   sf::st_transform(32633) %>% 
+#   sf::st_cast(to = "POLYGON")
+no <- rpostgis::pgListGeom(con, geog = TRUE) %>% 
+  dplyr::filter(grepl("Fenoscandia_NUTS", table_name))
+no <- rpostgis::pgGetGeom(con, c(no$schema_name, no$table_name), no$geom_column) %>% 
+  sf::st_as_sf() %>% 
+  dplyr::filter(grepl("NO", nuts_id)) %>% 
+  sf::st_union()
+# plot(no)
+
+# study area and GPS points
+study_area <- grep("study_area", vects, value = TRUE) %>% 
+  sf::st_read()
+use <- grep("use", vects, value = TRUE) %>% 
+  sf::st_read()
+# plot(terra::vect(study_area))
+# plot(terra::vect(use), add = T)
+
+# load infrastructure layers
+infra_vars <- paste(c("private_cab", "pub_cab", "roads", "trails"), collapse = "|")
+infra <- grep(infra_vars, vects, value = TRUE) %>% 
+  purrr::map(.f = sf::st_read)
+
+# count number of points
+n_infra <- purrr::map_dbl(infra[1:3], nrow)
+# count length of lines, in km
+length_infra <- purrr::map_dbl(infra[4:6], ~ sum(st_length(.))/1e3)
+```
+
+The study area was the Hardangervidda wild reindeer area in Southern
+Norway, where the largest remaining population of mountain reindeer is
+found (Fig. A3.1). During summer, the area is mainly used for tourism.
+Hardangervidda is a big plateau surrounded by large roads around its
+contour, which corresponds to the lower part of the area (Fig. A3.2).
+Towards the upper, central part, there are small access roads that link
+the large highways to tourist cabins and a multitude of private
+cottages, which are also connected by a network of trails (Fig. A3.2).
+The area has `r n_infra[2]` large tourist cabins which are constantly
+visited by many tourists and `r n_infra[3]` smaller public cabins. In
+contrast, `r n_infra[1]` private cottages are spread throughout
+Hardangervidda.
+
+## Reindeer GPS data
+
+Fourty-eight female reindeer were captured and monitored between 2001
+and 2010. Reindeer were immobilized from helicopter [see details in
+@evans_physiologic_2013] and equipped with GPS collars with drop-off
+system. To regularize the fix rate among collars, we used 1 reindeer
+position every 6 hours. We considered the data from July as a month
+representative of the summer, to avoid including reindeer positions
+during either the end of the calving season or during rut and autumn
+migration. For detailed data cleaning and preparation procedures, please
+see @panzacchi_searching_2015.
+
+To perform habitat selection analyses, for each used GPS location we
+created a set of 9 locations available but not used by reindeer, spread
+uniformly within this wild reindeer area (Fig. A3.1). The combination of
+use and available locations was then annotated with environmental
+spatial data to assess the effects of the different infrastructure on
+reindeer space use.
+
+```{r plot_area1, eval=TRUE, echo=FALSE, results=FALSE, fig.show='hide'}
+# plot
+map_no <- tm_shape(no) +
+  tm_borders() + 
+  tm_shape(study_area) +
+  tm_polygons(col = "brown2", border.col = "brown2") +
+  tm_layout(title = "Norway",
+            title.size = 1)
+grob_no <- tmap_grob(map_no)
+
+map_area <- tm_shape(study_area) +
+  tm_borders() +
+  tm_shape(use) +
+  tm_dots(title = "Reindeer GPS data") +
+  tm_scale_bar(text.size = 1.1) +
+  tm_compass(position = c("right", "top"), text.size = 1.1)
+grob_area <- tmap_grob(map_area)
+```
+
+```{r plot_area2, eval=TRUE, echo=FALSE, results='hide', fig.cap="Hardangervidda reindeer area in Southern Norway and reindeer GPS locations used in this study."}
+# plot
+im <- ggdraw() +
+  draw_plot(grob_area) +
+  draw_plot(grob_no,
+            width = 0.3, height = 0.3,
+            x = 0.0, y = 0.97, vjust = 1)
+im
+```
+
+## Environmental covariates
+
+We started by considering the following infrastructure variables to
+potentially affect reindeer habitat selection:
+
+-   Private cottages
+-   Large tourist cabins
+-   Small tourist cabins
+-   Roads of high traffic
+-   Roads of low traffic
+-   Trails
+
+The spatial data sources and details are described in
+@panzacchi_searching_2015. First, the vector files for each kind of
+infrastructure were rasterized using a grid of 100 m resolution for a
+buffer of 50 km around the study area; the buffer around the area was
+used to avoid edge effects in the influence measures' calculation. Then,
+both the influence of the nearest feature and the cumulative influence
+measures were calculated. For infrastructure represented as points
+(cottages and cabins), the input for influence calculation was the count
+of features within each grid cell, while for the linear infrastructure
+the input was a binary map (1 where infrastructure are located, 0
+elsewhere).
+
+Influence measures were calculated considering different influence
+functions (threshold, linear, Gaussian, and exponential decays; Fig. 1
+in the main text), for a set of (irregularly distributed) zones of
+influence, from 100 m to 20 km. This allowed us to assess whether
+habitat selection is affected by either cumulative influence or the
+influence of the nearest feature, while estimating the ZoI and
+accounting for the shape of the influence of the features of the
+different types of infrastructure within the ZoI. All influence
+functions were considered to have value 1 at the origin (where the
+infrastructure are located) and vary according to the different shapes
+(Fig. 1A in the main text). For the threshold and linear decay
+functions, the ZoI was defined as the distance at which the influence
+decreases to zero. For the Gaussian and exponential decay functions,
+which asymptotically approach zero, the ZoI was defined as the distance
+at which the functions reach 0.05.
+
+To account for bio-climatic variation in reindeer space use, as also
+included as covariates land cover and 4 principal components (PCA axes)
+from a large principal component analysis performed in Norway to
+understand patterns of bio-climatic-geographical variation across the
+country [@bakkestuen_step-less_2008]. We used the NORUT land cover map
+with 30 m resolution and 25 vegetation classes, which we further grouped
+for modeling purposes (see the final classes in Table A3.1). The four
+principal components represent gradients of (1) PC1 - continentality,
+(2) PC2 - altitude, (3) PC3 - terrain ruggedness, and (4) PC4 - solar
+radiation, and account for 75 - 85% of the bio-climatic variation in
+Norway, representing the major environmental gradients in the study area
+[@panzacchi_searching_2015]. Prior to the analyses, all continuous
+variables (all but land cover) were standardized to mean 0 and standard
+deviation 1.
+
+```{r plot_infra, eval=TRUE, echo=FALSE, fig.cap="Main anthropogenic infrastructure in the Hardangervidda reindeer area."}
+# plot
+map1 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[1]]) +
+  tm_dots(title = "Private cottages") +
+  tm_scale_bar(position = c("RIGHT", "BOTTOM"), text.size = 0.6) +
+  tm_compass(position = c("RIGHT", "TOP"), text.size = 0.6) +
+  tm_layout(main.title = "Private cottages", main.title.size = 1)
+
+map2 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[2]]) +
+  tm_dots() +
+  tm_layout(main.title = "Tourist cabins - large",
+            main.title.size = 1)
+
+map3 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[3]]) +
+  tm_dots() +
+  tm_layout(main.title = "Tourist cabins - small", 
+            main.title.size = 1)
+
+map4 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[4]]) +
+  tm_lines() +
+  tm_layout(main.title = "Roads - large",
+            main.title.size = 1)
+
+map5 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[5]]) +
+  tm_lines() +
+  tm_layout(main.title = "Roads - small",
+            main.title.size = 1)
+
+map6 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra[[6]]) +
+  tm_lines() +
+  tm_layout(main.title = "Trails",
+            main.title.size = 1)
+
+map_all <- tmap::tmap_arrange(map1, map2, map3, map4, map5, map6, ncol = 3)
+map_all
+```
+
+```{r table_infra_dist, eval=TRUE, echo=FALSE}
+r_l <- list.files("../data/analysis_GPS/", pattern = "euclidean",
+                  full.names = TRUE)
+
+infra_dist <- terra::rast(r_l)
+
+# stats
+vars_n <- c("Private cottages", "Large tourist cabins", "Small tourist cabins", 
+            "Large roads", "Small roads", "Trails")
+pr <- c(0, .1, 0.25, .5, .75, .9, 1)
+nm <- c("Infrastructure", paste0(100*pr, "%"))
+stats <- global(infra_dist, quantile, probs = pr, na.rm = T) %>% 
+  tibble::as_tibble() %>% 
+  tibble::add_column(infra = vars_n, .before = 1)
+# stats
+
+# show table
+kableExtra::kbl(stats, booktabs = T, digits = 0, col.names = nm, caption = caption("Tab_1", "Quantiles of the Euclidean distance to the nearest feature (in meters) for the main anthropogenic infrastructure in the Hardangervidda reindeer area.")) %>%
+  kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
+```
+
+```{r plot_infra_dist, eval=FALSE, echo=FALSE, results='hide', fig.cap="Euclidean distance to the nearest feature of the main anthropogenic infrastructure in the Hardangervidda reindeer area."}
+# plot
+map1 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[1]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_scale_bar(position = c("RIGHT", "BOTTOM"), text.size = 0.6) +
+  tm_compass(position = c("RIGHT", "TOP"), text.size = 0.6) +
+  tm_layout(main.title = "Private cottages", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map2 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[2]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_layout(main.title = "Tourist cabins - large", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map3 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[3]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_layout(main.title = "Tourist cabins - small", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map4 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[4]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_layout(main.title = "Roads - large", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map5 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[5]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_layout(main.title = "Roads - small", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map6 <- tm_shape(study_area) +
+  tm_borders() + 
+  tm_shape(infra_dist[[6]]+1) +
+  tm_raster(title = "Distance (m)", style = "log10",
+            legend.hist = FALSE) +
+  tm_layout(main.title = "Trails", 
+            main.title.size = 1,
+            legend.position = c("LEFT", "BOTTOM"))
+
+map_all <- tmap::tmap_arrange(map1, map2, map3, map4, map5, map6, ncol = 3)
+map_all
+```
+
+
+
+```{r fit_models_unstructured, echo=FALSE, eval=FALSE}
+# load data
+load(file = "../data/analysis_GPS/cuminf_zoi_GPS_dataset_annotated.rda")
+# names(dat)
+
+# results table
+# layers <- expand.grid(infrastructure = infrastructure,
+#                             measure = measures,
+#                             shape = shapes,
+#                             zoi = zoi_vals)
+
+# result table with covariate options
+infrastructure = c("private_cabins", "public_cabins_high", "public_cabins_low", "roads_high", "roads_low", "trails")
+measures <- c("cumulative", "nearest")
+shapes <- c("threshold", "bartlett", "exp_decay") # add Gauss
+zoi_vals <- c(100, 250, 500, 1000, 2500, 5000, 10000, 20000, 30000)
+
+results <- expand.grid(private_cabin_measure = measures,
+                       private_cabin_shape = shapes,
+                       private_cabin_zoi = zoi_vals,
+                       public_cabin_measure = measures,
+                       public_cabin_shape = shapes,
+                       public_cabin_zoi = zoi_vals)
+                       # roads_high_measure = measures,
+                       # roads_high_shape = shapes,
+                       # roads_high_zoi = zoi_vals,
+                       # roads_low_measure = measures,
+                       # roads_low_shape = shapes,
+                       # roads_low_zoi = zoi_vals,
+                       # trails_measure = measures,
+                       # trails_shape = shapes,
+                       # trails_zoi = zoi_vals)
+
+# re-organize
+results <- results %>%
+  tibble::tibble() %>%
+  dplyr::mutate(pub_cab = "public_cabins",
+                priv_cab = "private_cabins",
+                mod = NA,
+                AIC = NA)
+
+head(results)
+nrow(results)
+
+# list of models
+mods <- list()
+
+# subset variables of interest
+variables_interest1 <- c("use", "NORUTreclass")
+variables_interest2 <- c("norway_pca")
+
+# i=100
+pb <- txtProgressBar(min = 0, max = nrow(results), style = 3)
+for (i in 1:nrow(results)) {
+
+  # dataset for analysis
+  dat_analysis <- dat %>%
+    dplyr::select(variables_interest1, starts_with(variables_interest2))
+
+  # get parms
+  parms <- results[i,]
+
+  # get infrastructure variables
+
+  # public cabins
+  pub_cabins_name <- paste(parms$pub_cab, parms$public_cabin_measure,
+                           parms$public_cabin_shape, parms$public_cabin_zoi, sep = "_")
+  dat_analysis$public_cabins <- dat[, match(pub_cabins_name, names(dat))]
+
+  # private cabins
+  priv_cabins_name <- paste(parms$priv_cab, parms$private_cabin_measure,
+                            parms$private_cabin_shape, parms$private_cabin_zoi, sep = "_")
+  dat_analysis$private_cabins <- dat[, match(priv_cabins_name, names(dat))]
+
+#  mod <- rsf(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
+#             m=0, B=0, data = dat)
+#  mod <- glm(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
+#             data = dat, family=binomial)
+
+  mod <- try(coxph(Surv(rep(1, length(use)), use) ~ scale(private_cabins) + scale(public_cabins) + NORUTreclass +
+                 poly(scale(norway_pca_klima_axis1), 2) + poly(scale(norway_pca_klima_axis2),2) +
+                 scale(norway_pca_klima_axis3) + scale(norway_pca_klima_axis4), data = dat_analysis))
+
+  mods[[i]] <- mod
+  results$AIC[i] <- try(AIC(mod))
+
+  setTxtProgressBar(pb, i)
+}
+
+# save(results, mods, file = "../data/analysis_GPS/cuminf_zoi_results_rsf.rda")
+```
+
+## Habitat selection modeling
+
+Reindeer habitat selection was modeled through habitat selection
+functions (HSF, eq. 1 in the main text) considering the additive effect
+of the covariates described above. We included a quadratic term for PC1
+and PC2 to account for non-linear responses [@panzacchi_searching_2015].
+HSFs were fitted using the `coxph` function of the `survival` package
+[@therneau_package_2020; @therneau_modeling_2000].
+
+The first step in the modeling approach was to fit HSFs considering one
+infrastructure type at a time, to infer which influence measures and
+zones of influence better explained habitat selection, while also
+checking for correlations among the predictors [an approach similar to
+@laforge_process-focussed_2015]. These models included land cover and
+the bio-climatic PCAs, in addition to either the cumulative influence or
+the influence of the nearest feature of a single infrastructure type.
+Given that the influence measures could assume 2 representations
+(cumulative, nearest) and follow 4 different functions (threshold,
+linear, Gaussian, exponential decay) with 6 distinct ZoI values (100 m,
+250 m, 500 m, 1 km, 2.5 km, 5 km, 10 km, 20 km), for each infrastructure
+type we fitted 64 HSFs. Additionally, we also fit HSFs considering the
+log-distance to the nearest feature, which is a predictor commonly used
+in statistical models to assess the impacts of anthropogenic
+infrastructure on biodiversity. HSFs were compared though the Akaike
+information criterion (AIC), and for each infrastructure type the 15
+influence measures that better explained habitat selection (lower AIC)
+were chosen to be included in the multi-infrastructure HSF (see below).
+
+We considered variables to be correlated if the Pearson correlation
+coefficient between their values was higher than 0.6, and excluded those
+variables with higher Variance Inflation Factor [VIF, which measures how
+much the variance of an estimated regression coefficient is increased
+because of collinearity @kutner_applied_2005].
+
+```{r fit_models_univariate_glm, echo=FALSE, eval=FALSE}
+# load data
+load(file = "../data/analysis_GPS/cuminf_zoi_GPS_dataset_annotated.rda")
+# names(dat)
+
+#----
+# standardize variables
+vars_to_standardize <- c("private_cabins", "public_cabins_high", 
+                         "public_cabins_low", "roads_high", "roads_low", "trails") %>% 
+  paste(collapse = "|")
+
+# cols to standardize
+cols_std <- names(dat) %>% 
+  grep(pattern = vars_to_standardize)
+
+dat_sc <- dat %>% 
+  dplyr::mutate(across(all_of(cols_std), scale),
+                w = ifelse(use == 1, 1, 5000))
+
+# check
+head(dat$private_cabins_cumulative_threshold_10000)
+head(dat_sc$private_cabins_cumulative_threshold_10000)
+
+#----
+# univariate model selection
+
+# formula
+form <- use ~ multief + NORUTreclass +
+  poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
+  norway_pca_klima_axis3 + norway_pca_klima_axis4
+# covariates
+vars <- c("private_cabins", "public_cabins_high", "public_cabins_low", "roads_high", "roads_low", "trails")
+
+# multiple fits
+multifits <- multifit_single_multivar(mod = "glm", covariates = vars, 
+                                      data = dat_sc, 
+                                      args = c("family = binomial", "weight = w"),
+                                      formula = form, criterion = "AIC", 
+                                      print_best = 10, 
+                                      print_sum = F, plot_est = F)
+
+#---
+# diagnostics
+source("find_parms_cumulative.R")
+diag_plots <- list()
+diag_plots_zoom <- list()
+diag_plots_zoom2 <- list()
+
+for(i in 1:length(multifits$model_comparison)) {
+  
+  tab <- multifits$model_comparison[[i]] %>% 
+    dplyr::mutate(var = find_parms_cumulative(multief)$vars,
+                  cum = find_parms_cumulative(multief)$cum,
+                  shape = find_parms_cumulative(multief)$func,
+                  zoi = find_parms_cumulative(multief)$zoi)
+  tab_min <- tab %>% 
+    dplyr::group_by(cum, shape) %>% 
+    dplyr::summarise(rowid_min_aic = rowid[which.min(AIC)], 
+                     zoi_min_aic = zoi[which.min(AIC)],
+                     rowid_max_slope = rowid[which.max(abs(beta))],
+                     zoi_max_slope = zoi[which.max(abs(beta))])
+  
+  p1 <- tab %>% 
+    ggplot(aes(rowid, AIC, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    annotate("text", x = median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "cumulative") + 
+    annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "nearest") +
+    labs(x = paste("ZoI for", gsub("_", " ", tab$var[1])),
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_min_aic, labels = tab_min$zoi_min_aic) +
+    theme_bw() 
+  p1
+  
+  p2 <- tab %>% 
+    ggplot(aes(rowid, beta, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
+    annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
+    labs(x = gsub("_", " ", tab$var[1]),
+         y = "Slope",
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_max_slope, labels = tab_min$zoi_max_slope) +
+    theme_bw() 
+  p2
+  
+  p2_zoom <- tab %>%
+    dplyr::mutate(beta = ifelse(abs(beta) > 20, NA, beta)) %>% 
+    ggplot(aes(rowid, beta, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    # annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
+    # annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
+    labs(x = gsub("_", " ", tab$var[1]),
+         y = "Slope",
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_max_slope, labels = tab_min$zoi_max_slope) +
+    theme_bw() 
+  p2_zoom
+  
+  p12 <- ggpubr::ggarrange(p1, p2, nrow = 2, common.legend = T)
+  p12
+  
+  p12_zoom <- ggpubr::ggarrange(p1, p2_zoom, nrow = 2, common.legend = T)
+  p12_zoom
+  
+  p12_zoom2 <- ggpubr::ggarrange(p1, p2_zoom + ylim(-1, NA), nrow = 2, common.legend = T)
+  p12_zoom2
+  
+  diag_plots[[i]] <- p12
+  diag_plots_zoom[[i]] <- p12_zoom
+  diag_plots_zoom2[[i]] <- p12_zoom2
+}
+
+# save
+for(i in 1:length(diag_plots)) {
+  # save
+  ggsave(paste0("glm_diag_plot_scale_univariate_", vars[i], ".png"), 
+         plot = diag_plots[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  ggsave(paste0("glm_diag_plot_scale_univariate_", vars[i], "_zoom.png"), 
+         plot = diag_plots_zoom[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  ggsave(paste0("glm_diag_plot_scale_univariate_", vars[i], "_zoom2.png"), 
+         plot = diag_plots_zoom2[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  #print
+  diag_plots[[i]]
+}
+
+#---
+# exploring some results
+
+# 5 best models for each variable
+multifits$model_comparison_all
+# where are the log distance models?
+log_models <- purrr::map_df(multifits$model_comparison, function(x) 
+  x %>%
+    tibble::rowid_to_column(var = "rank") %>%
+    dplyr::filter(grepl("log", multief))) 
+log_models
+## 73 models in total
+log_best <- log_models %>% 
+  dplyr::filter(rank == min(rank))
+
+# correlations
+corr <- purrr::map(multifits$model_elements, ~ .$corr) %>% 
+  purrr::map(~ .[1:10])
+corr_excluded <- purrr::map(corr, ~ purrr::map(.x, ~ .@excluded))
+corr_matrix <- purrr::map2(corr, corr_excluded, ~ purrr::map2(.x, .y, function(x, y) 
+  if(length(y) == 0) return(NULL) else return(x@corMatrix)))
+          
+corr_excluded
+
+# errors?
+err <- purrr::map(multifits$model_elements, ~ .$warnings) %>% 
+  purrr::map(~ .[1:5])
+err
+```
+
+```{r fit_models_univariate_coxph, echo=FALSE, eval=FALSE, results=FALSE}
+# load data
+load(file = "../data/analysis_GPS/cuminf_zoi_GPS_dataset_annotated.rda")
+# names(dat)
+
+#----
+# standardize variables
+vars <- c("private_cabins", "public_cabins_high", "public_cabins_low", "roads_high", "roads_low", "trails")
+vars_to_standardize <- vars %>% 
+  paste(collapse = "|")
+
+# cols to standardize
+cols_std <- names(dat) %>% 
+  grep(pattern = vars_to_standardize)
+
+dat_sc <- dat %>% 
+  dplyr::mutate(across(all_of(cols_std), scale)) #%>% 
+  # tidyr::drop_na(all_of(cols_std))
+
+# check
+head(dat$private_cabins_cumulative_threshold_10000)
+head(dat_sc$private_cabins_cumulative_threshold_10000)
+
+#----
+# univariate model selection
+
+# formula
+form <- Surv(rep(1, length(use)), use) ~ multief + NORUTreclass +
+                 poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
+                 norway_pca_klima_axis3 + norway_pca_klima_axis4
+# covariates
+# vars <- c("private_cabins", "public_cabins_high", "public_cabins_low", "roads_high", "roads_low", "trails")
+# vars <- paste(vars, "nearest", sep = "_")
+
+# multiple fits
+multifits <- multifit_single_multivar(mod = "coxph", covariates = vars, 
+                                      data = dat_sc,
+                                      formula = form, criterion = "AIC", 
+                                      corr_threshold = 0.6,
+                                      print_best = 5, 
+                                      print_sum = F, plot_est = F)
+
+#---
+# exploring some results
+
+# 5 best models for each variable
+multifits$model_comparison_all
+# where are the log distance models?
+log_models <- purrr::map_df(multifits$model_comparison, function(x) 
+  x %>%
+    tibble::rowid_to_column(var = "rank") %>%
+    dplyr::filter(grepl("log", multief))) 
+log_models
+## 65 models in total
+log_best <- log_models %>% 
+  dplyr::filter(rank == min(rank))
+log_best # best = 10 for priv cabins high
+
+# correlations
+corr <- purrr::map(multifits$model_elements, ~ .$corr) %>% 
+  purrr::map(~ .[1:5])
+corr_excluded <- purrr::map(corr, ~ purrr::map(.x, ~ .@excluded))
+corr_matrix <- purrr::map2(corr, corr_excluded, ~ purrr::map2(.x, .y, function(x, y) 
+  if(length(y) == 0) return(NULL) else return(x@corMatrix)))
+          
+corr_excluded
+
+# errors?
+err <- purrr::map(multifits$model_elements, ~ .$warnings) %>% 
+  purrr::map(~ .[1:5])
+err
+
+# Check correlations between the variables - only 5 best scales
+vars_keep <- c("private_cabins", "public_cabins_high", "trails")
+
+vars_corr <- multifits$model_comparison_all %>%
+  dplyr::select(grep(""))
+  dplyr::select(covariate, multief) %>% 
+  tidyr::nest(multief) %>% 
+  dplyr::mutate(vars_corr = purrr::map(data, ~ as.character(.$multief)))
+
+corr_all_df <- expand.grid(private_cabins = vars_corr$vars_corr[[1]],
+                           public_cabins_high =  vars_corr$vars_corr[[2]],
+                           public_cabins_low = vars_corr$vars_corr[[3]],
+                           roads_high = vars_corr$vars_corr[[4]],
+                           roads_low = vars_corr$vars_corr[[5]],
+                           trails = vars_corr$vars_corr[[6]]) %>% 
+  dplyr::mutate_all(as.character)
+
+corr_all <- list()
+corr_excluded <- list()
+corr_kept <- list()
+corr_th <- 0.6
+for(i in 1:nrow(corr_all_df)) {
+  # print(i)
+  v <- corr_all_df[i,] %>% purrr:::flatten_chr()
+  d <- dat_sc %>% dplyr::select(all_of(v))
+  c <- usdm::vifstep(d, th = 2)
+  corr_all[[i]] <- c
+  corr_excluded[[i]] <- c@excluded
+  corr_kept[[i]] <- c@results$Variables
+}
+
+v_ex <- unlist(corr_excluded)
+table(v_ex)
+
+
+#---
+# diagnostics
+source("find_parms_cumulative.R")
+diag_plots <- list()
+diag_plots_zoom <- list()
+diag_plots_zoom2 <- list()
+
+for(i in 1:length(multifits$model_comparison)) {
+  
+  tab <- multifits$model_comparison[[i]] %>% 
+    dplyr::mutate(var = find_parms_cumulative(multief)$vars,
+                  cum = find_parms_cumulative(multief)$cum,
+                  shape = find_parms_cumulative(multief)$func,
+                  zoi = find_parms_cumulative(multief)$zoi)
+  tab_min <- tab %>% 
+    dplyr::group_by(cum, shape) %>% 
+    dplyr::summarise(rowid_min_aic = rowid[which.min(AIC)], 
+                     zoi_min_aic = zoi[which.min(AIC)],
+                     rowid_max_slope = rowid[which.max(abs(beta))],
+                     zoi_max_slope = zoi[which.max(abs(beta))])
+  
+  p1 <- tab %>% 
+    ggplot(aes(rowid, AIC, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    annotate("text", x = median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "cumulative") + 
+    annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "nearest") +
+    labs(x = paste("ZoI for", gsub("_", " ", tab$var[1])),
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_min_aic, labels = tab_min$zoi_min_aic) +
+    theme_bw() 
+  p1
+  
+  p2 <- tab %>% 
+    ggplot(aes(rowid, beta, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
+    annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
+    labs(x = gsub("_", " ", tab$var[1]),
+         y = "Slope",
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_max_slope, labels = tab_min$zoi_max_slope) +
+    theme_bw() 
+  p2
+  
+  p2_zoom <- tab %>%
+    dplyr::mutate(beta = ifelse(abs(beta) > 20, NA, beta)) %>% 
+    ggplot(aes(rowid, beta, color = shape, group = paste(cum, shape))) +
+    geom_vline(xintercept = median(tab$rowid)-0.5, linetype = "dashed", col = "black") +
+    geom_point() +
+    # geom_point(aes(size = zoi)) +
+    geom_line() +
+    # annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
+    # annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
+    labs(x = gsub("_", " ", tab$var[1]),
+         y = "Slope",
+         color = "Function") +
+    scale_x_continuous(breaks = tab_min$rowid_max_slope, labels = tab_min$zoi_max_slope) +
+    theme_bw() 
+  p2_zoom
+  
+  p12 <- ggpubr::ggarrange(p1, p2, nrow = 2, common.legend = T)
+  p12
+  
+  p12_zoom <- ggpubr::ggarrange(p1, p2_zoom, nrow = 2, common.legend = T)
+  p12_zoom
+  
+  p12_zoom2 <- ggpubr::ggarrange(p1, p2_zoom + ylim(-1, NA), nrow = 2, common.legend = T)
+  p12_zoom2
+  
+  diag_plots[[i]] <- p12
+  diag_plots_zoom[[i]] <- p12_zoom
+  diag_plots_zoom2[[i]] <- p12_zoom2
+}
+
+# save
+for(i in 1:length(diag_plots)) {
+  # save
+  ggsave(paste0("diag_plot_scale_univariate_", vars[i], ".png"), 
+         plot = diag_plots[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  ggsave(paste0("diag_plot_scale_univariate_", vars[i], "_zoom.png"), 
+         plot = diag_plots_zoom[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  ggsave(paste0("diag_plot_scale_univariate_", vars[i], "_zoom2.png"), 
+         plot = diag_plots_zoom2[[i]], path = "output",
+         width = 20, height = 20, units = "cm", dpi = 300)
+  #print
+  diag_plots[[i]]
+}
+```
+
+# Results
+
+## Single-infrastructure HSF
+
+Small tourist cabins and roads were highly correlated with several of
+the the bio-climatic PCAs, and large roads were correlated with PCA 2
+(elevation), since most of the are found in the lower part of the
+Hardangervidda plateau. For this reason, these three variables were
+excluded for the analyses.
+
+```{r fit_models_multivariate, echo=FALSE, eval=FALSE}
+# univariate fits
+form <- Surv(rep(1, length(use)), use) ~ multief + NORUTreclass +
+                 poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
+                 norway_pca_klima_axis3 + norway_pca_klima_axis4
+# covariates
+vars <- c("private_cabins", "public_cabins_high")
+# fits
+multifits <- multifit_single_multivar(mod = "coxph", covariates = vars, 
+                                      data = dat_sc,
+                                      formula = form, criterion = "AIC", 
+                                      print_best = 15, 
+                                      print_sum = F, plot_est = F)
+multifits$model_comparison_all
+
+# univariate fits with only the nearest influence
+
+# covariates
+vars_nearest <- paste0(vars, "_nearest")
+# fits
+multifits_nearest <- multifit_single_multivar(mod = "coxph", covariates = vars_nearest,
+                                              data = dat_sc,
+                                              formula = form, criterion = "AIC",
+                                              print_best = 15,
+                                              print_sum = F, plot_est = F)
+multifits_nearest$model_comparison_all
+## It is expected that the selected scales will be very different! Because the range of influence goes from 0 to 1, not 0 to 300
+
+# run multivariate models based on these scales
+multiscale_fits <- multifit_multiscale(mod = "coxph",
+                                       mod_comparison_df = multifits$model_comparison_all,
+                                       data = dat_sc,
+                                       formula = update(form, ~ . - multief),
+                                       progress = T)
+# save(multiscale_fits, file = "../data/analysis_GPS/cuminf_zoi_results_rsf_priv_pub_cabins.rda")
+```
+
+```{r check_results, echo=FALSE, eval=FALSE}
+load(file = "../data/analysis_GPS/cuminf_zoi_results_rsf_priv_pub_cabins.rda")
+
+# check results
+head(multiscale_fits$model_comparison_df)  
+m1 <- multiscale_fits$best_model
+# m1 <- models[[out_df$rowid[[2]]]]
+summary(m1)
+summary(m1)$rsq
+
+# functions
+source("../../oneimpact/R/rescale_coefficients.R")
+(coef_unsc <- rescale_coefficients(m1, dat))
+cbind(coef(m1), coef_unsc)
+
+#----
+# output model selection table
+var_to_name <- function(x, var_name, unit = "") {
+  gsub(paste0(var_name, "_"), "", x) %>% 
+  strsplit(split = "_") %>% 
+  purrr::map_chr(function(y) {
+    nn <- length(y)
+    paste(y[1], paste(y[2:(nn-1)], collapse = " "), paste(as.numeric(y[nn])/1e3, unit, collapse = " "), sep = ", ")
+    })
+}
+  
+# var_to_name(out_df$private_cabins, "private_cabins")
+
+moddf <- multiscale_fits$model_comparison_df %>%
+  dplyr::select(-c(modelID, rank)) %>%
+  tibble::rowid_to_column(var = "Rank") %>%
+  dplyr::mutate(private_cabins = var_to_name(private_cabins, "private_cabins"),
+                public_cabins_high = var_to_name(public_cabins_high, "public_cabins_high"),
+                # roads_high = var_to_name(roads_high, "roads_high"),
+                # roads_low = var_to_name(roads_low, "roads_low"),
+                # trails = var_to_name(trails, "trails"),
+    # private_cabin_shape = c("Threshold", "Linear", "Exponential")[private_cabin_shape],
+    #             public_cabin_shape = c("Threshold", "Linear", "Exponential")[public_cabin_shape],
+                AIC = round(AIC, 0),
+                dAIC = round(dAIC, 1),
+                wAIC = ifelse(wAIC < 0.001, "<0.001", round(wAIC, 3))) %>%
+  # dplyr::select(-roads_low) %>% 
+  dplyr::mutate_all(as.character)
+
+first_nearest <- min(c(which(grepl("nearest", moddf$private_cabins)),
+                       which(grepl("nearest", moddf$public_cabins_high))))
+                       # which(grepl("nearest", moddf$roads_high)),
+                       # which(grepl("nearest", moddf$trails))))
+if(!(is.infinite(first_nearest)) & length(first_nearest) > 0)
+  lines_to_keep <- c(1:5, first_nearest) else
+    lines_to_keep <- c(1:5)
+
+moddf <- moddf %>%
+  dplyr::slice(lines_to_keep) %>% 
+  tibble::as_tibble()
+
+names(moddf)[2] <- "Private cabins"
+names(moddf)[3] <- "Public cabins high"
+# names(moddf)[4] <- "Roads high"
+# names(moddf)[5] <- "Trails"
+xtable::xtable(moddf)
+
+#----
+# coefficients best model
+m1
+
+# ** output summary table #######
+moddf <- broom::tidy(m1) %>% 
+  dplyr::mutate(unscaled_estimate = c(round(coef_unsc[c(1,2)], 3), rep("", length(coef_unsc)-2))) %>% 
+  dplyr::relocate(unscaled_estimate, .after = estimate) %>% 
+  dplyr::
+# for(i in vars)
+#   moddf$term[grepl(i, moddf$term)] <- paste0("scale(", gsub("_", " ", i), ")")
+moddf$term[grepl("private_cabins", moddf$term)] <- "private cabins (cumulative, threshold, 10km)"
+moddf$term[grepl("public_cabins", moddf$term)] <- "public cabins (cumulative, exponential, 20km)"
+moddf$term[grepl("reclass12", moddf$term)] <- "exposed ridges"
+moddf$term[grepl("reclass13", moddf$term)] <- "grass ridges"
+moddf$term[grepl("reclass14", moddf$term)] <- "heather ridges"
+moddf$term[grepl("reclass15", moddf$term)] <- "lichen"
+moddf$term[grepl("reclass16", moddf$term)] <- "heather"
+moddf$term[grepl("reclass17", moddf$term)] <- "heathland"
+moddf$term[grepl("reclass18", moddf$term)] <- "meadows"
+moddf$term[grepl("reclass19", moddf$term)] <- "early snowbed"
+moddf$term[grepl("reclass20", moddf$term)] <- "late snowbed"
+moddf$term <- gsub("norway_pca_klima_axis", "pc", moddf$term)
+moddf$term <- gsub("NORUTreclass", "", moddf$term)
+moddf <- moddf %>%
+  dplyr::select(Covariate = term, Estimate = estimate, `Unscaled Estimate` = unscaled_estimate, SE = std.error, p = p.value) %>%
+  dplyr::mutate(Estimate = round(Estimate, 2),
+                SE = round(SE, 2),
+                p = ifelse(p < 0.0001, "< 0.0001", round(p, 4))) %>%
+  dplyr::mutate_all(as.character)
+moddf
+xtable::xtable(moddf)
+
+```
+
+```{r beta_and_zoi, echo=FALSE, eval=FALSE}
+### 5. Plot theoretical footprint ----
+summary(m1)
+
+# magnitude of the effect
+(coefs <- coef_unsc[1:2])
+
+# take that from the models - function
+infra <- c("Private cabins", "Public cabins high")
+cum <- rep(TRUE, 2)
+func <- c("threshold_decay", "exp_decay")
+zoi_est <- c(10, 20)
+points  <- 0
+
+df_plots <- list()
+for(i in 1:length(infra)) {
+  df_plots[[i]] <- plot_influence2d(points, zoi_est[i], cumulative = cum[i],
+                                    fun = func[i], 
+                                    range_plot = c(-20, 20), step = 0.1, 
+                                    return_df = TRUE)$influence_df %>% 
+      dplyr::mutate(infrastructure = infra[i],
+                    measure = ifelse(cum[i], "cumulative", "nearest"),
+                    influence = func[i], 
+                    zoi = zoi_est[i],
+                    # multiply y per beta
+                    y_displaced = y + (i-1),
+                    impact = abs(as.numeric(coefs[i]))*y)
+}
+df_plots
+
+# merge
+df_plots <- dplyr::bind_rows(df_plots) %>% 
+  dplyr::mutate(infrastructure = factor(infrastructure, levels = infra))
+
+g1 <- df_plots %>% 
+  ggplot(aes(x, y)) +
+  geom_line() + 
+  # inset_element(house, left = 0.01, right = 0.08, bottom = 0.02, top = 0.08) +
+  facet_wrap(~infrastructure, ncol = 1) +
+  labs(x = "Distance (km)", y = "Influence") +
+  # scale_x_continuous(breaks = c(0, 3, 6, 9)) +
+  theme_bw(base_size = 14)
+g1
+
+ggsave("reindeer_zoi_influence.png", plot = g1, path = "../text/figures", width = 10, height = 10, 
+       units = "cm", dpi = 300)
+
+g2 <- df_plots %>% 
+  ggplot(aes(x, impact)) +
+  # geom_hline(yintercept = 1, linetype = 2, color = "grey") +
+  geom_line() + 
+  # inset_element(house, left = 0.01, right = 0.08, bottom = 0.02, top = 0.08) +
+  facet_wrap(~infrastructure, ncol = 1, scales = "free_y") +
+  ylim(0, NA) +
+  labs(x = "Distance (km)", y = "Impact") +
+  # scale_x_continuous(breaks = c(0, 3, 6, 9)) +
+  theme_bw(base_size = 14)
+g2
+
+ggsave("reindeer_zoi_impact_unscaled_parms.png", plot = g2, path = "../text/figures", width = 10, height = 10, 
+       units = "cm", dpi = 300)
+
+# range of values
+df_plots
+range_private_cabins <- c(1, max(dat$private_cabins_cumulative_threshold_10000, na.rm = TRUE))
+range_public_cabins_high <- c(1, max(dat$public_cabins_high_cumulative_exp_decay_20000, na.rm = TRUE))
+
+# plot minimum and maximum
+df_plots_maxmin <- df_plots %>% 
+  dplyr::mutate(impact_min = ifelse(infrastructure == "Private cabins", 
+                                    impact*range_private_cabins[1],
+                                    impact*range_public_cabins_high[1]),
+                impact_max = ifelse(infrastructure == "Private cabins", 
+                                    impact*range_private_cabins[2],
+                                    impact*range_public_cabins_high[2]))
+
+# minimum
+g3 <- g2 + facet_wrap(~infrastructure, ncol = 1) +
+  labs(x = "", y = "") +
+  ylim(0, 20)
+g3
+
+g4 <- df_plots_maxmin %>% 
+  ggplot(aes(x, impact_max)) +
+  # geom_hline(yintercept = 1, linetype = 2, color = "grey") +
+  geom_line() + 
+  # inset_element(house, left = 0.01, right = 0.08, bottom = 0.02, top = 0.08) +
+  facet_wrap(~infrastructure, ncol = 1) +#, scales = "free_y") +
+  ylim(0, NA) +
+  labs(x = "", y = "") +
+  # scale_x_continuous(breaks = c(0, 3, 6, 9)) +
+  theme_bw(base_size = 14)
+g4
+
+g5 <- ggpubr::ggarrange(g3, g4)
+
+# Annotate the figure by adding a common labels
+g5 <- annotate_figure(g5,
+                      top = text_grob("Minimum impact\t\t\t\t   Maximum impact", size = 14),
+                      bottom = text_grob("Distance (km)", vjust = -1, size = 14),
+                      left = text_grob("Impact", rot = 90, vjust = 2, size = 14))
+g5
+
+ggsave("reindeer_zoi_impact_single_multiple_features.png", plot = g5, path = "../text/figures", width = 16, height = 10, 
+       units = "cm", dpi = 300)
+```
+
+```{r retrieve_maps_from_grass, echo=FALSE, eval=FALSE}
+### Retrieve maps from GRASS for prediction
+
+# connect to GRASS
+ms <- "u_bb_cuminf"
+NinaR::grassConnect(mapset = ms)
+
+# region
+rgrass7::execGRASS("g.region", vector = "study_area", flags = c("a", "p"))
+# mask
+rgrass7::execGRASS("r.mask", vector = "study_area")
+
+#-------
+# vectors
+study_area_g <- "study_area"
+infra_g <- c("private_cabins@p_prodchange_envpoints",
+             "pub_cabins_summer_high@p_prodchange_envpoints")
+
+# study area
+study_area_v <- rgrass7::read_VECT(study_area_g)
+# cabins
+priv_cab_within_g <- "private_cabins_within"
+# rgrass7::execGRASS("v.select", ainput = infra_g[1], binput = study_area_g, 
+#                    output = priv_cab_within_g, operator = "within")
+private_cabins_v <- rgrass7::read_VECT(priv_cab_within_g)
+pub_cab_high_within_g <- "public_cabins_high_within"
+# rgrass7::execGRASS("v.select", ainput = infra_g[2], binput = study_area_g, 
+#                    output = pub_cab_high_within_g, operator = "within")
+public_cabins_high_v <- rgrass7::read_VECT(pub_cab_high_within_g)
+# use
+use_v <- dat %>% 
+  dplyr::filter(use == 1) %>% 
+  dplyr::select(x33, y33) %>% 
+  as.matrix %>% 
+  terra::vect(crs = crs(study_area_v))
+
+# save vectors externally
+vects <- c(study_area_v, private_cabins_v, public_cabins_high_v, use_v)
+names_v <- c("study_area_v", "private_cabins_v", "public_cabins_high_v", "use_v")
+for(i in 1:length(vects)) {
+  v <- st_as_sf(vects[[i]])
+  sf::st_write(v, paste0("../data/analysis_GPS/", names_v[i], ".gpkg"), delete_dsn = T)
+  # terra::writeVector(vects[[i]],
+  #                    filename = paste0("../data/analysis_GPS/", names_v[i], ".gpkg"),
+  #                    overwrite = T)
+}
+
+# plot
+# plot(use_v)
+
+# plot(study_area_v)
+# plot(public_cabins_high_v, add = T)
+# 
+# plot(study_area_v)
+# plot(private_cabins_v, add = T)
+
+#-------
+# rasters
+
+# model
+m1
+
+# list variables included in the model
+m_vars <- all.vars(m1$formula)[-1]
+
+# variables names in GRASS GIS
+layers <- rgrass7::execGRASS("g.list", type = "raster", pattern = "*inf*", mapset = ms) %>%
+  attr("resOut")
+rgrass7::use_sp()
+# find the layersof interest
+priv_cab_g <- util_find_layer_GRASS(list("private_cabins", "cumulative", "threshold", "10000"),
+                                    layers_grass = layers)
+pub_cab_high_g <- util_find_layer_GRASS(list("public_cabins_high", "cumulative", "exp_decay", "20000"),
+                                    layers_grass = layers)
+
+# find the equivalent layers with influence of the nearest
+priv_cab_near_g <- util_find_layer_GRASS(list("private_cabins", "nearest", "threshold", "10000"),
+                                    layers_grass = layers)
+pub_cab_high_near_g <- util_find_layer_GRASS(list("public_cabins_high", "nearest", "exp_decay", "20000"),
+                                    layers_grass = layers)
+
+m_vars_g <- c(priv_cab_g, pub_cab_high_g,
+              "Vegetation_NORUT_2009",
+              paste("Norway_PCA_klima_axis", 1:4, sep = ""))
+
+# mapsets where variables are located
+ms_cuminf <- "u_bb_cuminf"
+ms_norut <- "g_LandCover_Norway_NORUT_vegetation"
+ms_pca12 <- "g_BiogeographicalRegions_Norway_PCA_klima"
+ms_pca34 <- "u_bram.van.moorter"
+
+mapsets <- c(ms_cuminf, ms_cuminf, ms_norut, 
+  ms_pca12, ms_pca12, 
+  ms_pca34, ms_pca34)
+
+raster_names <- paste(m_vars_g, mapsets, sep = "@")
+
+# retrieve rasters
+rasters <- rgrass7::read_RAST(raster_names[-3], return_format = "terra")
+names(rasters) <- m_vars[-3]
+lu_rast <- rgrass7::read_RAST(raster_names[3], NODATA = 255, return_format = "terra")
+names(lu_rast) <- "norut"
+raster_nearest <- rgrass7::read_RAST(c(priv_cab_near_g, pub_cab_high_near_g), return_format = "terra")
+names(raster_nearest)
+
+# remove mask from GRASS GIS
+rgrass7::execGRASS("r.mask", flags = "r")
+
+# stack and save rasters
+all_rast <- c(rasters, lu_rast, raster_nearest)
+paste(names(all_rast), collapse = "','")
+terra::writeRaster(all_rast, "../data/analysis_GPS/rasters_to_predict_rsf.tif")
+```
+
+```{r predict_model_maps, echo=FALSE, eval=FALSE}
+# model
+m1
+
+# coefficients
+m_vars <- all.vars(m1$formula)[-1]
+all_coefs <- coef(m1)
+
+# load vectors
+path <- "../data/analysis_GPS/"
+study_area_v <- terra::vect(paste0(path, "study_area_v.gpkg"))
+private_cabins_v <- terra::vect(paste0(path, "private_cabins_v.gpkg"))
+public_cabins_high_v <- terra::vect(paste0(path, "public_cabins_high_v.gpkg"))
+use_v <- terra::vect(paste0(path, "use_v.gpkg"))
+
+# load raster
+all_rast <- terra::rast("../data/analysis_GPS/rasters_to_predict_rsf.tif")
+names(all_rast) <- c('private_cabins_cumulative_threshold_10000','public_cabins_high_cumulative_exp_decay_20000','norway_pca_klima_axis1','norway_pca_klima_axis2','norway_pca_klima_axis3','norway_pca_klima_axis4','NORUTreclass','private_cabins_inf_nearest_threshold10000','public_cabins_high_inf_nearest_exp_decay20000')
+rasters <- all_rast[[1:6]]
+lu_rast <- all_rast[[7]]
+raster_nearest <- all_rast[[8:9]]
+
+# prepare rasters for prediction
+# scale continuous variables
+rasters_scaled <- scale(rasters)
+# reclassify land cover raster
+classes <- data.frame(id = sort(unique(values(lu_rast))),
+                      NORUTreclass = as.character(sort(unique(values(lu_rast)))))
+classes$NORUTreclass <- ifelse(classes$id < 9, "11forest",
+                          ifelse(classes$id < 12, "bog",
+                                 ifelse(classes$id < 21, "mountain",
+                                        ifelse(classes$id < 22, "glacier",
+                                               ifelse(classes$id < 23, "water",
+                                                      ifelse(classes$id < 25,"other", NA))))))
+classes$NORUTreclass <- ifelse(classes$NORUTreclass == "mountain", as.character(classes$id), classes$NORUTreclass)
+levels(lu_rast) <- as.data.frame(classes)
+activeCat(lu_rast)
+# check
+sort(unique(values(lu_rast)))
+levels(lu_rast)[[1]]
+sort(unique(dat$NORUTreclass))
+
+# rasters for prediction
+rast_df <- c(rasters_scaled, lu_rast)
+
+pred <- predict(rast_df, m1)
+pred_sc <- rescale_vals(exp(pred))
+# plot(pred_sc)
+
+# prediction of impact of each variable
+all_coefs
+var_infra <- "private_cabins"
+impact_priv <- -1*(all_coefs[grepl(var_infra, names(all_coefs))] *
+                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+impact_priv_exp <- exp(all_coefs[grepl(var_infra, names(all_coefs))] *
+                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+impact_priv_exp_sc <- 1-rescale_vals(exp(all_coefs[grepl(var_infra, names(all_coefs))] *
+                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
+plot(impact_priv)
+plot(private_cabins_v, add = TRUE)
+plot(impact_priv)
+plot(private_cabins_v, add = TRUE)
+plot(impact_priv_exp_sc)
+plot(private_cabins_v, add = TRUE)
+
+var_infra <- "public_cabins_high"
+impact_pub <- -1*(all_coefs[grepl(var_infra, names(all_coefs))] *
+                    rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+impact_pub_exp <- exp(all_coefs[grepl(var_infra, names(all_coefs))] *
+                    rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+impact_pub_exp_sc <- 1-rescale_vals(exp(all_coefs[grepl(var_infra, names(all_coefs))] *
+                    rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
+plot(impact_pub)
+plot(public_cabins_high_v, add = TRUE)
+plot(impact_pub_exp)
+plot(public_cabins_high_v, add = TRUE)
+plot(impact_pub_exp_sc)
+plot(public_cabins_high_v, add = TRUE)
+
+impact_sc <- rescale_vals(c(impact_priv, impact_pub), 
+                          from = c(min(global(c(impact_priv, impact_pub), min, na.rm=T)$min), 
+                                   max(global(c(impact_priv, impact_pub), max, na.rm=T)$max)))
+plot(c(impact_priv, impact_pub))
+plot(impact_sc, range = c(0,1))
+```
+
+```{r beta_and_zoi_maps_plot_int, echo=FALSE, eval=FALSE}
+# plot 
+library(tmap)
+
+# sf objects
+study_area_sf <- st_as_sf(study_area_v)
+use_sf <- st_as_sf(use_v)
+
+tmap_mode("view")
+tm_basemap("OpenTopoMap") +
+  tm_shape(raster_nearest$private_cabins_inf_nearest_threshold10000,
+           name = "NearInf Private cabins 10km") +
+  tm_raster(style = "cont") +
+  tm_shape(raster_nearest$public_cabins_high_inf_nearest_exp_decay20000,
+           name = "NearInf Public cabins high 20km") +
+  tm_raster(style = "cont") +
+  tm_shape(rasters$private_cabins_cumulative_threshold_10000,
+           name = "CumInf Private cabins 10km") +
+  tm_raster(style = "log10") +
+  tm_shape(rasters$public_cabins_high_cumulative_exp_decay_20000,
+           name = "CumInf Public cabins high 20km") +
+  tm_raster(style = "cont") +
+  tm_shape(impact_priv, name = "Impact Private cabins 10km") +
+  tm_raster(style = "cont") +
+  tm_shape(impact_pub, name = "Impact Public cabins 20km") +
+  tm_raster(style = "cont") +
+  tm_shape(pred_sc, 
+           name = "Habitat suitability") +
+  tm_raster() +
+  tm_shape(study_area_sf,
+           name = "Study area") +
+  tm_borders() +
+  tm_shape(use_sf, 
+           name = "Reindeer use") +
+  tm_dots() +
+  tm_layout(title = "Reindeer GPS data")
+```
+
+```{r beta_and_zoi_maps_plot, echo=FALSE, eval=FALSE}
+# plot 
+library(tmap)
+library(jcolors)
+
+# sf objects
+study_area_sf <- st_as_sf(study_area_v)
+use_sf <- st_as_sf(use_v)
+private_cabins_sf <- st_as_sf(private_cabins_v)
+public_cabins_high_sf <- st_as_sf(public_cabins_high_v)
+
+save <- TRUE
+path <- "../text/figures/"
+tmap_mode("plot")
+
+# GPS
+p_gps <- tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(use_sf, name = "Reindeer use") +
+  tm_dots() +
+  tm_layout(main.title = "Reindeer GPS data")
+p_gps
+
+# private cabins
+p_priv_cab <- tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(private_cabins_sf, name = "Private cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Private cabins")
+p_priv_cab
+
+# public cabins
+p_pub_cab <- tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(public_cabins_high_sf, name = "Public cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Public cabins")
+p_pub_cab
+  
+# private cabins cumulative influence
+p_priv_cab_cuminf <- tm_shape(rasters[[1]]) +
+  tm_raster(style = "log10", title = "# cabins") +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(private_cabins_sf, name = "Private cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Cumulative influence - Private cabins", 
+            legend.frame = T)
+p_priv_cab_cuminf
+
+# public cabins cumulative influence
+p_pub_cab_cuminf <- tm_shape(rasters[[2]]) +
+  tm_raster(style = "cont", title = "# cabins") +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(public_cabins_high_sf, name = "Public cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Cumulative influence - Public cabins",
+            legend.frame = T)
+p_pub_cab_cuminf
+
+# private cabins nearest influence
+p_priv_cab_nearinf <- tm_shape(raster_nearest[[1]]) +
+  tm_raster(style = "cont", title = "Influence") +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(private_cabins_sf, name = "Private cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Nearest influence - Private cabins",
+            legend.frame = T)
+p_priv_cab_nearinf
+
+# public cabins nearest influence
+p_pub_cab_nearinf <- tm_shape(raster_nearest[[2]]) +
+  tm_raster(style = "cont", title = "Influence") +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  tm_shape(public_cabins_high_sf, name = "Public cabins") +
+  tm_dots() +
+  tm_layout(main.title = "Nearest influence - Public cabins",
+            legend.frame = T)
+p_pub_cab_nearinf
+
+# private cabins impact
+p_priv_cab_impact <- tm_shape(impact_priv) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(private_cabins_sf, name = "Private cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Private cabins",
+            legend.frame = T)
+p_priv_cab_impact
+
+# private cabins impact scaled 
+p_priv_cab_impact_sc <- tm_shape(impact_sc[[1]]) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(private_cabins_sf, name = "Private cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Private cabins",
+            legend.frame = T)
+p_priv_cab_impact_sc
+
+# private cabins impact with exponential and scaled 
+p_priv_cab_impact_exp_sc <- tm_shape(impact_priv_exp_sc) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(private_cabins_sf, name = "Private cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Private cabins",
+            legend.frame = T)
+p_priv_cab_impact_exp_sc
+
+# public cabins impact
+p_pub_cab_impact <- tm_shape(impact_pub) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(public_cabins_sf, name = "Public cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Public cabins",
+            legend.frame = T)
+p_pub_cab_impact
+
+# public cabins impact scaled 
+p_pub_cab_impact_sc <- tm_shape(impact_sc[[2]]) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA, 
+            breaks = seq(0, 1, 0.2)) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(public_cabins_sf, name = "Public cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Public cabins",
+            legend.frame = T)
+p_pub_cab_impact_sc
+
+# public cabins impact with exponential and scaled 
+p_pub_cab_impact_exp_sc <- tm_shape(impact_pub_exp_sc) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal12"), midpoint = NA) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(public_cabins_sf, name = "Public cabins") +
+  # tm_dots() +
+  tm_layout(main.title = "Impact - Public cabins",
+            legend.frame = T)
+p_pub_cab_impact_exp_sc
+
+# habitat suitability
+p_suitability <- tm_shape(pred_sc) +
+  tm_raster(style = "cont", title = "Impact", 
+            palette = jcolors::jcolors("pal11")) +
+            # palette = get_brewer_pal("Reds", n = 20)) +
+            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  tm_shape(study_area_sf, name = "Study area") +
+  tm_borders() +
+  # tm_shape(use_sf, name = "GPS data") +
+  # tm_dots() +
+  tm_layout(main.title = "Habitat suitability",
+            legend.frame = T)
+p_suitability
+
+plots <- ls(pattern = paste("^p_p", "^p_suit", "^p_gps", sep = "|"))
+if(save) {
+  for(i in 1:length(plots)) {
+    obj <- get(plots[i])
+    f <- paste0(path, "reindeer_results_", plots[i], ".png")
+    tmap_save(obj, filename = f, width = 15, height = 15, units = "cm", dpi = 300)
+  }
+}
+
+# devtools::install_github("bniebuhr/bivarmap", ref = "HEAD")
+library(bivarmap)
+mat <- bivarmap_colmatrix(9, xlab = "Private cabins", ylab = "Public cabins", breakstyle = "")
+rast <- bivarmap_raster(impact_priv, impact_pub, mat)
+biv_plot <- bivarmap_map(rast, colmatrix = mat)
+biv_plot
+plot
+```
+
+# References
+
+
