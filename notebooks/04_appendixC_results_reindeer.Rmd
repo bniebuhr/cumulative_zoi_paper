@@ -1,16 +1,17 @@
 ---
 title: "Appendix C"
-subtitle: "Cumulative influence of infrastructure on reindeer space use: fitting habitat selection models"
-author: "Bernardo Niebuhr, Bram van Moorter, Manuela Panzacchi"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+subtitle: "Cumulative impacts of infrastructure on reindeer space use: fitting habitat selection models"
+author: ""
+date: ""
 geometry: margin=2cm
 abstract: |
-  In this document we fit habitat selection models to wild reindeer GPS data to assess if and how 
-  the impacts of multiple infrastructure affect mountain reindeer (*Rangifer tarandus*) habitat selection 
-  during summer. We describe the modeling approach and present the results and predictions from
-  the fitted models. This document complements the description of materials and methods and the results
-  presented in in the main text of Niebuhr et al. *Estimating the cumulative impacts and the zone of influence from 
-  multiple anthropogenic infrastructure on biodiversity.*
+  In this document we fit habitat selection models to wild reindeer GPS data to 
+  assess if and how the impacts of multiple infrastructure affect mountain reindeer 
+  (*Rangifer tarandus*) habitat selection during summer. We describe the modeling 
+  approach and present the results and predictions from the fitted models. This 
+  document complements the description of materials and methods and the results
+  presented in the main text of Niebuhr et al. *Estimating the cumulative impact 
+  and zone of influence of anthropogenic infrastructure on biodiversity.*
 # bibliography: cuminf_bib.bib
 output:
   NinaR::jensAnalysis:
@@ -111,14 +112,14 @@ multiple infrastructure affect mountain reindeer (*Rangifer tarandus*)
 habitat selection during summer. We first briefly describe the study area, the
 GPS data handling, and the environmental variables used in the analysis.
 We then describe the calculation of the infrastructure-related
-covariates using both the measures of cumulative influence and the
-influence of the nearest feature. These measures quantify the zone of
-influence (ZoI) as well as how the influence varies with the distance to
-infrastructure. Then, we describe the structure of the statistical
-models and the fitting procedures and present the results in details.
-We explore qualitatively the interpretation of both influence measures
-in single-infrastructure models, and then estimate the magnitude of the
-impacts and the ZoI of each infrastructure in multi-infrastructure models, 
+covariates using both ZoI metrics, the cumulative zone of influence (ZoI) and 
+the ZoI of the nearest feature. These metrics quantify the ZoI as well as how 
+the influence varies with the distance to infrastructure. Then, we describe 
+the structure of the statistical models and the fitting procedures and present 
+the results in details.
+We explore qualitatively the interpretation of both ZoI metrics
+in single-infrastructure models, and then estimate the effect size 
+and the ZoI of each infrastructure in multi-infrastructure models, 
 to finally assess the combined impacts of infrastructure on reindeer 
 habitat selection.
 
@@ -174,7 +175,8 @@ cottages, which are also connected by a network of trails (Fig. C2). The
 area has `r n_infra[2]` large tourist cabins which are constantly
 visited by many tourists and `r n_infra[3]` smaller public cabins. In
 contrast, `r n_infra[1]` private cottages are spread throughout
-Hardangervidda.
+Hardangervidda. Infrastructure data was retrieved from the N50 map,
+obtained from GeoNorge map catalog (https://kartkatalog.geonorge.no/).
 
 Due to their high density, most areas (90%) in Hardangervidda are closer
 than 3 km from any private cottage and 5 km from the closest trail
@@ -182,12 +184,6 @@ than 3 km from any private cottage and 5 km from the closest trail
 km from large tourist cabins and 10 km from small tourist cabins. There
 are also many areas far from roads towards the central part of the
 Hardangervidda (Table C1).
-
-**I kept the other infrastructure in the description of the area (Fig.
-C2 and Table C1), but in the next section here I deal with only the
-private and public cabins and do not mentioned the others anymore. I
-also do not mention them in the main text. Should I also remove them
-from the description or it is ok to keep it like that?**
 
 ```{r plot_area1, eval=TRUE, echo=FALSE, results=FALSE, fig.show='hide'}
 # plot
@@ -208,7 +204,7 @@ map_area <- tm_shape(study_area) +
 grob_area <- tmap_grob(map_area)
 ```
 
-```{r plot_area2, eval=TRUE, echo=FALSE, results='hide', fig.cap="Hardangervidda reindeer area in Southern Norway and reindeer GPS locations used in this study."}
+```{r plot_area2, eval=TRUE, echo=FALSE, results='hide', fig.cap="Hardangervidda reindeer area in Southern Norway and reindeer GPS locations for the Summer season, used in this study."}
 # plot
 im <- ggdraw() +
   draw_plot(grob_area) +
@@ -220,24 +216,24 @@ im
 
 ## Reindeer GPS data
 
-Fourty-eight female reindeer were captured and monitored between 2001
-and 2010. Reindeer were immobilized from helicopter 
+Between 2001 and 2019, 115 female reindeer were captured and monitored. 
+Reindeer were immobilized from helicopter 
 <!-- [see details in @evans_physiologic_2013]  -->
 (see details in Evans et al., 2013) and equipped with GPS collars with drop-off
 system. To regularize the fix rate among collars, we used 1 reindeer
 position every 6 hours, summing up a total of 7478 positions for all individuals. 
-We analyzed only the data from July, selected
-here as a month representative of the summer, to avoid including
+We analyzed only the data from 1 July - 15 August, selected
+here as a period representative of the summer, to avoid including
 reindeer positions during either the end of the calving season or during
 rut and autumn migration. For detailed data cleaning and preparation
-procedures, please see Panzacchi et al. (2015).
+procedures, see Panzacchi et al. (2015).
 <!-- @panzacchi_searching_2015. -->
 
 To perform habitat selection analyses, for each used GPS location we
 created a set of 9 locations available but not used by reindeer, spread
-uniformly within this wild reindeer area (Fig. C1). The combination of
-use and available locations was then annotated with environmental
-spatial data to assess the effects of the different infrastructure on
+randomly within this wild reindeer area (Fig. C1). The combination of
+use and available locations was annotated with environmental
+spatial data to assess the impacts of the different infrastructure on
 reindeer space use.
 
 ```{r plot_infra, eval=TRUE, echo=FALSE, fig.cap="Main anthropogenic infrastructure in the Hardangervidda reindeer area, used to illustrate the landscape context. Only private cottages and large tourist cabins were included in the analysis."}
@@ -379,7 +375,7 @@ Roads occur mostly in the lower parts of the area -- and are correlated
 with elevation and terrain ruggedness -- while other infrastructure
 occur closely together (e.g. small roads and cabins). For this reason,
 and for illustration purposes, in the analyses presented here we
-considered only the effects of private cottages and large tourist cabins.
+assessed only the impacts of private cottages and large tourist cabins.
 The spatial data sources and details are described in
 <!-- @panzacchi_searching_2015.  -->
 Panzacchi et al. (2015).
@@ -388,9 +384,9 @@ First, the vector representation for each kind of
 infrastructure was rasterized using a grid of 100 m resolution for an
 extent which included a buffer of 50 km around the study area; 
 the buffer was
-used to avoid edge effects in the influence measures' calculation. Then,
-both the influence of the nearest feature and the cumulative influence
-measures were calculated. Since the infrastructure considered here
+used to avoid edge effects in the ZoI metrics' calculation. Then,
+both the ZoI of the nearest feature and the cumulative ZoI
+metrics were calculated. Since the infrastructure considered here
 (cottages and cabins) are represented as points,
 the input for influence calculation was the count
 of features within each grid cell.
@@ -398,21 +394,21 @@ of features within each grid cell.
 <!-- the input was a binary map (1 where infrastructure are located, 0 -->
 <!-- elsewhere). -->
 
-Influence measures were calculated considering different influence
-functions (threshold, linear, Gaussian, and exponential decays; Fig. 1
-in the main text), for a set of (irregularly distributed) zones of
-influence, from 100 m to 20 km. This allowed us to assess whether
-habitat selection is affected by either the cumulative influence or the
-influence of the nearest feature, while estimating the ZoI and
-accounting for the shape of the influence of the features of the
-different types of infrastructure within the ZoI. All influence
+Influence measures were calculated considering ZoI function with different
+shapes (threshold, linear, Gaussian, and exponential decays; see Appendix A), 
+for a set of (irregularly distributed) radii, from 100 m to 20 km. 
+This allowed us to assess whether
+habitat selection is affected by either the cumulative impact or the
+impact of the nearest feature, while estimating the ZoI radius and
+accounting for the shape of the ZoI of the features of the
+different types of infrastructure. All ZoI
 functions were considered to have value 1 at the origin (where the
-infrastructure are located) and vary according to the different shapes
-(Fig. 1A in the main text). For the threshold and linear decay
-functions, the ZoI was defined as the distance at which the influence
+infrastructure are located) and vary according to the different shapes. 
+For the threshold and linear decay
+functions, the ZoI radius was defined as the distance at which the influence
 decreases to zero. For the Gaussian and exponential decay functions,
-which asymptotically approach zero, the ZoI was defined as the distance
-at which the functions reach 0.05.
+which asymptotically approach zero, the ZoI radius was defined as the distance
+at which the functions reach a limit value of 0.05 (see Appendix A).
 
 To account for bio-climatic variation in reindeer space use, we also
 included as covariates land cover and 4 principal components (PCA axes)
@@ -421,7 +417,7 @@ understand patterns of bio-climatic-geographical variation across the
 country 
 <!-- [@bakkestuen_step-less_2008].  -->
 (Bakkestuen et al., 2008).
-We used the NORUT land cover map (Johansen, 2009)
+We used the SatVeg land cover map (Johansen, 2009)
 with 30 m resolution and 25 vegetation classes, which we further grouped
 for modeling purposes (see the final classes in Table C3). The four
 bio-climatic principal components represent gradients of (1) PC1 - continentality,
@@ -457,15 +453,15 @@ results <- expand.grid(private_cabin_measure = measures,
                        public_cabin_measure = measures,
                        public_cabin_shape = shapes,
                        public_cabin_zoi = zoi_vals)
-                       # roads_high_measure = measures,
-                       # roads_high_shape = shapes,
-                       # roads_high_zoi = zoi_vals,
-                       # roads_low_measure = measures,
-                       # roads_low_shape = shapes,
-                       # roads_low_zoi = zoi_vals,
-                       # trails_measure = measures,
-                       # trails_shape = shapes,
-                       # trails_zoi = zoi_vals)
+# roads_high_measure = measures,
+# roads_high_shape = shapes,
+# roads_high_zoi = zoi_vals,
+# roads_low_measure = measures,
+# roads_low_shape = shapes,
+# roads_low_zoi = zoi_vals,
+# trails_measure = measures,
+# trails_shape = shapes,
+# trails_zoi = zoi_vals)
 
 # re-organize
 results <- results %>%
@@ -488,38 +484,38 @@ variables_interest2 <- c("norway_pca")
 # i=100
 pb <- txtProgressBar(min = 0, max = nrow(results), style = 3)
 for (i in 1:nrow(results)) {
-
+  
   # dataset for analysis
   dat_analysis <- dat %>%
     dplyr::select(variables_interest1, starts_with(variables_interest2))
-
+  
   # get parms
   parms <- results[i,]
-
+  
   # get infrastructure variables
-
+  
   # public cabins
   pub_cabins_name <- paste(parms$pub_cab, parms$public_cabin_measure,
                            parms$public_cabin_shape, parms$public_cabin_zoi, sep = "_")
   dat_analysis$public_cabins <- dat[, match(pub_cabins_name, names(dat))]
-
+  
   # private cabins
   priv_cabins_name <- paste(parms$priv_cab, parms$private_cabin_measure,
                             parms$private_cabin_shape, parms$private_cabin_zoi, sep = "_")
   dat_analysis$private_cabins <- dat[, match(priv_cabins_name, names(dat))]
-
-#  mod <- rsf(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
-#             m=0, B=0, data = dat)
-#  mod <- glm(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
-#             data = dat, family=binomial)
-
+  
+  #  mod <- rsf(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
+  #             m=0, B=0, data = dat)
+  #  mod <- glm(use ~ ZoI_pub_cabins + ZoI_private_cabins + NORUTreclass + norway_pca_klima_axis1 + norway_pca_klima_axis2 + norway_pca_klima_axis3 + norway_pca_klima_axis4,
+  #             data = dat, family=binomial)
+  
   mod <- try(coxph(Surv(rep(1, length(use)), use) ~ scale(private_cabins) + scale(public_cabins) + NORUTreclass +
-                 poly(scale(norway_pca_klima_axis1), 2) + poly(scale(norway_pca_klima_axis2),2) +
-                 scale(norway_pca_klima_axis3) + scale(norway_pca_klima_axis4), data = dat_analysis))
-
+                     poly(scale(norway_pca_klima_axis1), 2) + poly(scale(norway_pca_klima_axis2),2) +
+                     scale(norway_pca_klima_axis3) + scale(norway_pca_klima_axis4), data = dat_analysis))
+  
   mods[[i]] <- mod
   results$AIC[i] <- try(AIC(mod))
-
+  
   setTxtProgressBar(pb, i)
 }
 
@@ -534,8 +530,8 @@ of the covariates described above. We included a quadratic term for PC1
 and PC2 to account for non-linear responses (Panzacchi et al., 2015).
 <!-- [@panzacchi_searching_2015]. -->
 HSFs were fitted through binomial generalized linear models using
-the function `glm` in R (R Core Team, 2021), with weigth 1
-for used locations and 5000 for available locations
+the function `glm` in R (R Core Team, 2021), with weight $w = 1$
+for used locations and $w = 5000$ for available locations
 (as suggested in Fieberg et al., 2021).
 <!-- using the `coxph` function of the `survival` package -->
 <!-- (Therneau, 2020; Therneau & Grambsch, 2000). -->
@@ -545,27 +541,27 @@ The first step in the modeling approach was to fit HSFs considering one
 infrastructure type at a time in a procedure of variable selection
 (Burnham & Anderson, 2002),
 <!-- [@burnham_model_2002],  -->
-to infer which influence measures and zones of
-influence better explained habitat selection, while also checking for
+to infer which ZoI shape and radius better explained habitat selection, 
+while also checking for
 correlations among the predictors 
 (an approach similar to Laforge et al., 2015, and Huais, 2018).
 <!-- [an approach similar to -->
 <!-- @laforge_process-focussed_2015 and @huais_multifit_2018].  -->
 These models
 included land cover and the bio-climatic PCAs, in addition to either the
-cumulative influence or the influence of the nearest feature of a single
-infrastructure type. Given that the influence measures could assume 2
-representations (cumulative, nearest) and follow 4 different functions
+cumulative ZoI or the ZoI of the nearest feature of a single
+infrastructure type. Given that the ZoI metrics could assume 2
+representations (cumulative, nearest) and follow 4 different shapes
 (threshold, linear, Gaussian, exponential decay) with 8 distinct ZoI
-values (100 m, 250 m, 500 m, 1 km, 2.5 km, 5 km, 10 km, 20 km), for each
+radii (100 m, 250 m, 500 m, 1 km, 2.5 km, 5 km, 10 km, 20 km), for each
 infrastructure type we fitted 64 HSFs. Additionally, we also fitted HSFs
 considering the log-distance to the nearest feature, which is a
 predictor commonly used in statistical models to assess the impacts of
 anthropogenic infrastructure on biodiversity (e.g. Torres et al., 2016; 
 Polfus et al., 2011). Single-infrastructure HSFs
-were fit with the `multifit` approach in R (Huais, 2018). HSFs were
+were fit with the `multifit` function in R (Huais, 2018). HSFs were
 compared though the Akaike information criterion (AIC), and for each
-infrastructure type the 15 influence measures that better explained
+infrastructure type the 15 ZoI variables that better explained
 habitat selection (lower AIC) were chosen to be included in the
 multi-infrastructure HSF (see below).
 
@@ -581,38 +577,36 @@ the bio-climatic variables.
 
 In the single-infrastructure HSFs, we also assessed the estimated
 coefficients 
-related to the infrastructure influence variables 
-($\beta$'s in Eq. 1 of the main text). Even
+related to the infrastructure ZoI variables 
+($\beta$'s in Eq. 2 of the main text). Even
 though the coefficient values were not a criterion for selecting the
-most parsimonious influence variables, they are important to indicate
-consistency in the influence measures across the scales. If the
+most parsimonious ZoI variables, they are important to indicate
+consistency in the ZoI measures across the scales. If the
 coefficient changes signs as
-the ZoI increases, representing a shift from avoidance to selection, 
+the ZoI radius increases, representing a shift from avoidance to selection, 
 this might be a warning to be careful in the evaluation
 of the most plausible ZoI. Since the continuous covariates were
 standardized for model fitting, their model coefficients were 
 rescaled back them to the original covariate range, for interpretation
 purposes and prediction.
 
-We fitted multi-infrastructure HSFs by combining the best influence
-measures for each infrastructure. Since not necessarily the best
-influence function and ZoI for single-infrastructure models will remain as
+We fitted multi-infrastructure HSFs by combining the best ZoI
+variables for each infrastructure. Since not necessarily the best
+ZoI shape and radius for single-infrastructure models will remain as
 the most likely in multi-infrastructure models, we selected the 15 best
-covariates for each infrastructure and fitted all possible combinations
+covariates for each infrastructure type and fitted all possible combinations
 between them. For models in which the infrastructure covariates were 
 correlated, and excluded those variables with higher Variance Inflation Factor 
 (VIF, which measures how much the variance of an estimated 
-regression coefficient is increased
-because of collinearity; Kutner, 2005).
+regression coefficient is increased because of collinearity; Kutner, 2005).
 <!-- @kutner_applied_2005].  -->
 In total, we fitted
-$15^2 = 225$ multi-infrastructure HSFs, which were also compared
-through AIC.
+$15^2 = 225$ multi-infrastructure HSFs, which were also compared through AIC.
 
 To quantify the impacts of infrastructure, for the most likely model 
-we used eq. 2 of the main
-text and multiplied the magnitude of the impacts -- the coefficients of
-the fitted model -- by the influence measures included the model. We
+we used eq. 3 of the main
+text and multiplied the effect size -- the coefficients of
+the fitted model -- by the ZoI variable included the model. We
 then estimated habitat suitability by predicting the HSF (eq. 1 in the
 main text) over the space and rescaling the predicted values to the
 interval [0, 1].
@@ -681,7 +675,7 @@ corr <- purrr::map(multifits$model_elements, ~ .$corr) %>%
 corr_excluded <- purrr::map(corr, ~ purrr::map(.x, ~ .@excluded))
 corr_matrix <- purrr::map2(corr, corr_excluded, ~ purrr::map2(.x, .y, function(x, y) 
   if(length(y) == 0) return(NULL) else return(x@corMatrix)))
-          
+
 corr_excluded
 
 # errors?
@@ -777,8 +771,8 @@ sd_vals <- purrr::map(
         if(grepl("Error", var_pred) | is.na(var_pred))
           return(NA)
         dat %>% 
-            dplyr::pull(var_pred) %>% 
-            sd(na.rm = TRUE)
+          dplyr::pull(var_pred) %>% 
+          sd(na.rm = TRUE)
       })
     unlist(sds)
   })
@@ -831,7 +825,7 @@ for(i in 1:length(model_comparison)) {
     facet_wrap(~label, labeller = labeller(label = function(x) ""), ncol = 10, scales = "free_x") +
     # annotate("text", x = median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "cumulative") + 
     # annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$AIC, na.rm = T), label = "nearest") +
-    labs(x = "ZoI with minimal AIC",#paste("ZoI for", gsub("_", " ", tab$var[1])),
+    labs(x = "ZoI radius with minimal AIC",#paste("ZoI for", gsub("_", " ", tab$var[1])),
          color = "Function") +
     scale_shape_manual(values=c(16, 8)) +
     scale_x_continuous(breaks = tab_min$rowid_min_aic, labels = tab_min$zoi_min_aic) +
@@ -854,7 +848,7 @@ for(i in 1:length(model_comparison)) {
     facet_wrap(~label, labeller = labeller(label = function(x) ""), ncol = 10, scales = "free_x") +
     # annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
     # annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
-    labs(x = paste("ZoI for", gsub("_", " ", tab$var[1])),
+    labs(x = paste("ZoI radius for", gsub("_", " ", tab$var[1])),
          y = "Coefficient",
          color = "Function",
          shape = "Errors") +
@@ -874,7 +868,7 @@ for(i in 1:length(model_comparison)) {
     facet_wrap(~label, labeller = labeller(label = function(x) ""), ncol = 10, scales = "free_x") +
     # annotate("text", x = median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "cumulative") + 
     # annotate("text", x = 3*median(tab$rowid)/2, y = min(tab$beta, na.rm = T), label = "nearest") +
-    labs(x = paste("ZoI for", gsub("_", " ", tab$var[1])),
+    labs(x = paste("ZoI radius for", gsub("_", " ", tab$var[1])),
          y = "Coefficient",
          color = "Function") +
     scale_x_continuous(breaks = ttab$rowid[ssub], labels = ttab$zoi[ssub]) +
@@ -938,7 +932,7 @@ cols_std <- names(dat) %>%
 
 dat_sc <- dat %>% 
   dplyr::mutate(across(all_of(cols_std), scale)) #%>% 
-  # tidyr::drop_na(all_of(cols_std))
+# tidyr::drop_na(all_of(cols_std))
 
 # check
 head(dat$private_cabins_cumulative_threshold_10000)
@@ -949,8 +943,8 @@ head(dat_sc$private_cabins_cumulative_threshold_10000)
 
 # formula
 form <- Surv(rep(1, length(use)), use) ~ multief + NORUTreclass +
-                 poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
-                 norway_pca_klima_axis3 + norway_pca_klima_axis4
+  poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
+  norway_pca_klima_axis3 + norway_pca_klima_axis4
 # covariates
 # vars <- c("private_cabins", "public_cabins_high", "public_cabins_low", "roads_high", "roads_low", "trails")
 # vars <- paste(vars, "nearest", sep = "_")
@@ -985,7 +979,7 @@ corr <- purrr::map(multifits$model_elements, ~ .$corr) %>%
 corr_excluded <- purrr::map(corr, ~ purrr::map(.x, ~ .@excluded))
 corr_matrix <- purrr::map2(corr, corr_excluded, ~ purrr::map2(.x, .y, function(x, y) 
   if(length(y) == 0) return(NULL) else return(x@corMatrix)))
-          
+
 corr_excluded
 
 # errors?
@@ -1065,8 +1059,8 @@ sd_vals <- purrr::map(
         if(grepl("Error", var_pred) | is.na(var_pred))
           return(NA)
         dat %>% 
-            dplyr::pull(var_pred) %>% 
-            sd(na.rm = TRUE)
+          dplyr::pull(var_pred) %>% 
+          sd(na.rm = TRUE)
       })
     unlist(sds)
   })
@@ -1221,7 +1215,7 @@ for(i in 1:length(diag_plots)) {
 
 <!-- For the other three infrastructure types,  -->
 We start by describing how
-much support the different influence measures presented in explaining
+much support the different ZoI variables presented in explaining
 reindeer habitat selection in the single-infrastructure models. By doing
 so, we aim at showing qualitatively what the different influence
 measures represent and how one would interpret them within an ecological
@@ -1230,35 +1224,35 @@ context.
 ### Private cottages
 
 For private cottages, the most parsimonious HSF included the cumulative
-influence with Gaussian decay and ZoI = 10 km, but the support for the
-cumulative influence with the same ZoI of 10 km but other functions was
+ZoI with Gaussian decay shape and radius $r = 10$ km, but the support for the
+cumulative ZoI with the same radius of 10 km but other shapes was
 also relatively high (low relative difference in AIC, Fig. C3A).
-Overall, the models including cumulative influence measures (regardless
-of the influence function and in great part of the ZoI) performed much
-better than the ones including the influence of the nearest private
-cottage (Fig. C3A), what shows a strong evidence that the impacts of multiple
+Overall, the models including cumulative ZoI metrics (regardless
+of the ZoI function shape and in great part of the ZoI radius) performed much
+better than the ones including the ZoI of the nearest private
+cottage (Fig. C3A), what points to strong evidence that the impacts of multiple
 private cottages on reindeer habitat selection accumulate. The
-coefficients were consistently negative across ZoI values (Fig. C3B),
-which indicates the ZoI values with minimum AIC presented in the x axis
+coefficients were consistently negative across ZoI radii (Fig. C3B),
+which indicates the ZoI radii with minimum AIC presented in the x axis
 of the Fig. C3A are also consistent.
 
 We also go beyond the simple statistical variable selection and
-interpret the most parsimonious models considering the influence of the
-nearest feature. In this case, regardless of the influence function, the
-ZoI varies from 500 m to 1000 m (Fig. C3A). Combining the results, we
+interpret the most parsimonious models considering the ZoI of the
+nearest feature. In this case, regardless of the ZoI shape, the
+ZoI radius varied from 500 m to 1000 m (Fig. C3A). Combining the results, we
 can say that, if we consider the closest private cottage only, reindeer
 generally avoid being closer than 1 km from any cottage, but since many
 areas have a high density of cottages (Fig. C2, Table C1), they respond
-to the combined impact of individual cottages at a larger extent - a
-zone of influence of 10 km. This might also be related to how the
+to the combined impact of many individual cottages at a larger extent - a
+zone of influence of 10 km radius. This might also be related to how the
 cottages are used. Tourists who stay in a cottage hardly walk farther
 than a few kilometers from it, since they must return to the cottage in
-the end of the day. Then, the ZoI of a single cottage is shorter.
+the end of the day. Then, the ZoI radius of a single cottage is shorter.
 However, in areas where many private cottages are clustered, there is a
-much wider area used by tourists and the ZoI of this combined cluster of
-cottages is higher.
+much wider area used by tourists and the radius of the ZoI of this combined 
+cluster of cottages is higher.
 
-```{r fit_models_univariate_coxph_checkAIC_plot1, echo=FALSE, eval=TRUE, fig.cap="Model AIC (A) and coefficients (B) estimated for the influence of private cottages in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative influence and influence of the nearest feature for different influence shapes and ZoI values (see the x axis in B for some of the candidate ZoI values, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI at which the AIC was minimal for each type and function of the influence measure. Scales marked with `*' represent errors in the model fitting (e.g. threshold influnece of the nearest feature for ZoI = 10 km or 20 km, when the variable is constant = 1 over the whole study area)."}
+```{r fit_models_univariate_glm_checkAIC_plot1, echo=FALSE, eval=TRUE, fig.cap="Model AIC (A) and coefficients (B) estimated for the zone of influence of private cottages in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative ZoI and the ZoI of the nearest feature for different ZoI shapes and radii (see the x axis in B for some of the candidate ZoI radii values, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI radius at which the AIC was minimal for each ZoI metric and shape. Scales marked with `*' represent errors in the model fitting (e.g. threshold ZoI of the nearest feature for ZoI = 10 km or 20 km, when the variable is constant = 1 over the whole study area)."}
 diag_plots[[1]]
 ```
 
@@ -1266,41 +1260,42 @@ diag_plots[[1]]
 
 In the single-infrastructure models, there was also evidence of
 cumulative impacts of large tourist cabins with a 20 km zone of
-influence (Fig. C4). The most supported influence variable was the
-cumulative influence with exponential decay shape and ZoI of 20 km. This
-ZoI value was selected regardless of the influence function, and even
-for the influence of the nearest feature the most common ZoI was 20 km
+influence (Fig. C4). The most supported ZoI variable was the
+cumulative ZoI with exponential decay shape and radius of 20 km. This
+ZoI radius was selected regardless of the function shape, and even
+for the ZoI of the nearest feature the most common radius was 20 km
 (see the x axis in Fig. C4A).
 
-The closer correspondence between the selected ZoI of cumulative
-influence and nearest influence measures, in comparison to the private
+The closer correspondence between the selected radius of cumulative
+ZoI and nearest ZoI metrics, in comparison to the private
 cottages, might be due to several factors. First, tourist cabins are
-present at a much lower density in Hardangervidda, with high median
-Euclidean distance to the closest cabin (Fig. C2 and Table C1). As a
+present at a much lower density in Hardangervidda, with high median 
+distance to the closest cabin (Fig. C2 and Table C1). As a
 consequence, there is not so much difference between what the cumulative
-and nearest influences represent (as for the private
-cottages), since the influence function of each feature only start
-to accumulate for larger ZoIs. Therefore, 
+and nearest ZoI metrics represent (as for the private
+cottages), since the ZoI of each feature only start
+to accumulate for larger radii. Therefore, 
 the ZoI corresponding to smaller AIC is closer between models including 
-cumulative and nearest influence measures.
+cumulative and nearest metrics.
 This is in accordance with the demonstrations
 from Appendix B, where we showed that, for landscapes with sparse 
-distribution of features and small ZoI, $\phi_{nearest}$ and $\phi_{cum}$
+distribution of features and small ZoI radius, $\phi_{nearest}$ and $\phi_{cum}$
 are highly correlated. 
 Second, large tourist cabins are used very differently by tourists than
 private cottages. Each cabin is visited by a large load of tourists at a
-time, which consequently use a much higher area around the cabins,
-compared to single private cottage. As a consequence, the ZoI of large
+time, which consequently use a much wider area around the cabins,
+compared to each single private cottage. As a consequence, the ZoI radius of large
 tourist cabins tend to be higher.
 
-As for private cottages, in the models with tourist cabins the coefficients were also
-consistently negative, representing reindeer avoidance to public tourist cabins.
+As for the private cottages, in the models with tourist cabins the coefficients were also
+consistently negative, representing reindeer avoidance to public tourist cabins 
+(Fig. C4B).
 
-```{r fit_models_univariate_coxph_checkAIC_plot2, echo=FALSE, eval=TRUE, fig.cap="Model AIC (A) and coefficients (B) estimated for the influence of large tourist cabins in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative influence and influence of the nearest feature for different influence shapes and ZoI values (see the x axis in B for some of the candidate ZoI values, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI at which the AIC was minimal for each type and function of the influence measure."}
+```{r fit_models_univariate_glm_checkAIC_plot2, echo=FALSE, eval=TRUE, fig.cap="Model AIC (A) and coefficients (B) estimated for the zone of influence of large tourist cabins in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative ZoI and ZoI of the nearest feature for different ZoI shapes and radii (see the x axis in B for some of the candidate values for the radius, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI radius at which the AIC was minimal for each ZoI metrics and shape."}
 diag_plots_zoom[[2]]
 ```
 
-```{r fit_models_univariate_coxph_checkAIC_plot3, echo=FALSE, eval=FALSE, fig.cap="AIC (A) and coefficients (B) estimated for the influence of trails in models including only this type of infrastructure. The plots show the AIC and coefficients of the cumulative influence and influence of the nearest feature for different influence shapes and ZoI values (see the x axis in B for some of the candidate ZoI values, in meters, which varied from 100 m to 20 km). The x axis in A show the ZoI at which the AIC was minimal for each type and function of the influence measure."}
+```{r fit_models_univariate_glm_checkAIC_plot3, echo=FALSE, eval=FALSE, fig.cap="Model AIC (A) and coefficients (B) estimated for the zone of influence of tourist trails in models including only this type of infrastructure. The plots show the AIC and the coefficients (scaled back to the original range of the covariates) of the cumulative ZoI and ZoI of the nearest feature for different ZoI shapes and radii (see the x axis in B for some of the candidate values for the radius, in meters, which varied from 100 m to 20 km). The x axis in A shows the ZoI radius at which the AIC was minimal for each ZoI metrics and shape."}
 diag_plots[[6]]
 ```
 
@@ -1309,8 +1304,8 @@ diag_plots[[6]]
 ```{r fit_models_multivariate_coxph, echo=FALSE, eval=FALSE, results='hide', fig.show='hide'}
 # univariate fits
 form <- Surv(rep(1, length(use)), use) ~ multief + NORUTreclass +
-                 poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
-                 norway_pca_klima_axis3 + norway_pca_klima_axis4
+  poly(norway_pca_klima_axis1, 2) + poly(norway_pca_klima_axis2,2) +
+  norway_pca_klima_axis3 + norway_pca_klima_axis4
 # covariates
 vars_keep <- c("private_cabins", "public_cabins_high")#, "trails")
 # fits
@@ -1420,7 +1415,6 @@ save(multi_infra_best_model_call, multi_infra_model_comparison_df, file = "../da
 # save(multiscale_fits, file = "../data/analysis_GPS/cuminf_zoi_results_rsf_priv_pub_cabins_trails.rda")
 ```
 
-
 ```{r check_results_glm, echo=FALSE, eval=TRUE, results='hide', fig.show='hide'}
 load(file = "../data/analysis_GPS/cuminf_zoi_GPS_dataset_annotated.rda")
 load(file = "../data/analysis_GPS/cuminf_zoi_results_rsf_priv_pub_cabins_glm.rda")
@@ -1455,13 +1449,13 @@ cbind(coef(m1), coef_unsc)
 # output model selection table
 var_to_name <- function(x, var_name, unit = "") {
   gsub(paste0(var_name, "_"), "", x) %>% 
-  strsplit(split = "_") %>% 
-  purrr::map_chr(function(y) {
-    nn <- length(y)
-    paste(y[1], paste(y[2:(nn-1)], collapse = " "), paste(as.numeric(y[nn])/1e3, unit, collapse = " "), sep = ", ")
+    strsplit(split = "_") %>% 
+    purrr::map_chr(function(y) {
+      nn <- length(y)
+      paste(y[1], paste(y[2:(nn-1)], collapse = " "), paste(as.numeric(y[nn])/1e3, unit, collapse = " "), sep = ", ")
     })
 }
-  
+
 # var_to_name(out_df$private_cabins, "private_cabins")
 
 moddf <- multi_infra_model_comparison_df %>%
@@ -1472,8 +1466,8 @@ moddf <- multi_infra_model_comparison_df %>%
                 # roads_high = var_to_name(roads_high, "roads_high"),
                 # roads_low = var_to_name(roads_low, "roads_low"),
                 # trails = var_to_name(trails, "trails"),
-    # private_cabin_shape = c("Threshold", "Linear", "Exponential")[private_cabin_shape],
-    #             public_cabin_shape = c("Threshold", "Linear", "Exponential")[public_cabin_shape],
+                # private_cabin_shape = c("Threshold", "Linear", "Exponential")[private_cabin_shape],
+                #             public_cabin_shape = c("Threshold", "Linear", "Exponential")[public_cabin_shape],
                 AIC = round(AIC, 0),
                 dAIC = round(dAIC, 1),
                 wAIC = ifelse(wAIC < 0.001, "<0.001", round(wAIC, 3))) %>%
@@ -1483,8 +1477,8 @@ moddf <- multi_infra_model_comparison_df %>%
 # nearest influence models
 first_nearest <- min(c(which(grepl("nearest", moddf$private_cabins)),
                        which(grepl("nearest", moddf$public_cabins_high))))
-                       # which(grepl("nearest", moddf$roads_high)),
-                       # which(grepl("nearest", moddf$trails))))
+# which(grepl("nearest", moddf$roads_high)),
+# which(grepl("nearest", moddf$trails))))
 if(!(is.infinite(first_nearest)) & length(first_nearest) > 0)
   lines_to_keep <- c(1:5, first_nearest) else
     lines_to_keep <- c(1:5)
@@ -1492,8 +1486,8 @@ if(!(is.infinite(first_nearest)) & length(first_nearest) > 0)
 # log models
 first_log <- min(c(which(grepl("log", moddf$private_cabins)),
                    which(grepl("log", moddf$public_cabins_high))))
-                   # which(grepl("nearest", moddf$roads_high)),
-                   # which(grepl("nearest", moddf$trails))))
+# which(grepl("nearest", moddf$roads_high)),
+# which(grepl("nearest", moddf$trails))))
 if(!(is.infinite(first_log)) & length(first_log) > 0)
   lines_to_keep <- c(lines_to_keep, first_log)
 
@@ -1509,48 +1503,48 @@ xtable::xtable(moddf)
 ```
 
 The most parsimonious multi-infrastructure model included the
-cumulative influence of private cottages with threshold decay and ZoI =
-10 km and the cumulative influence of multiple tourist cabins with
-exponential decay and ZoI = 20 km ($\Delta AIC = 26.9$ from the 
+cumulative ZoI of private cottages with threshold decay and $r = 10$ 
+km and the cumulative ZoI of multiple tourist cabins with
+exponential decay and $r = 20$ km ($\Delta AIC = 26.9$ from the 
 second-ranked model, $wAIC = 1$; Table C2). Notice that, as
-parameterized here, for the tourist cabins an exponential decay with ZoI
+parameterized here, for the tourist cabins an exponential decay ZoI with radius
 of 20 km means that the influence of cabins decrease to half of its
 maximum value at ca. 5 km from the infrastructure
 (exponential half life is \~ $ZoI/4$ here). The most plausible model with a
-covariate for the influence of the nearest feature was ranked 26^th^ in
+covariate for the ZoI of the nearest feature was ranked 26^th^ in
 the model selection ($\Delta AIC = 921$), and the most likely model including the
-log-distance to the nearest feature was ranked 44^th^ ($\Delta AIC = 1197$; Table C2). This
-presents a strong support for the cumulative impacts of both private
-cottages and tourist cabins on reindeer habitat selection in
+log-distance to the nearest feature was ranked 44^th^ ($\Delta AIC = 1197$; 
+Table C2). This presents strong support for the cumulative impacts of both 
+private cottages and tourist cabins on reindeer habitat selection in
 Hardangervidda.
 
 ```{r model_AIC_table, echo=FALSE, eval=TRUE}
-kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_2", 'Infrastructure variables included in the most parsimonious models. For each model we show the type of influence (``cumulative", ``nearest"), the influence function (``exponential decay", ``gaussian decay", ``threshold", ``Bartlett or linear decay"), and the ZoI (in km) for that covariate included in the model. For each model we also present the AIC, the difference in AIC to the most likely model (dAIC), and the AIC weight. The last lines show the most plausible model which included any variable with the influence of the nearest feature and the log-distance to the nearest feature (in this case, for tourist cabins). Models also included bio-climatic variables and land cover (see Table C3).')) %>%
+kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_2", 'Infrastructure variables included in the most parsimonious models. For each model we show the type of ZoI metric (``cumulative", ``nearest"), the ZoI function (``exponential decay", ``gaussian decay", ``threshold", ``Bartlett or linear decay"), and the ZoI radius (in km) for that covariate included in the model. For each model we also present the AIC, the difference in AIC to the most likely model (dAIC), and the AIC weight. The last lines show the most plausible model which included any variable with the ZoI of the nearest feature and the log-distance to the nearest feature (in this case, for tourist cabins). Models also included bio-climatic variables and land cover (see Table C3).')) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
 
 Looking closely to the most plausible multi-infrastructure HSF (after
 rescaling the coefficients back to the original range of variation of the infrastructure
-influence predictors), we see both infrastructure are avoided by
-reindeer. Their influence vary differently across space since their
-influence functions and ZoI differ -- a threshold function with 10 km
-ZoI for private cottages and an exponential decay with 20 km ZoI for
-tourist cabins --, but also because the estimated magnitude of the impact of a single
+ZoI predictors), we see both infrastructure are avoided by
+reindeer. Their impact vary differently across space since their
+ZoI functions and radii differ -- a threshold ZoI with 10 km
+radius for private cottages and an exponential decay ZoI with 20 km radius for
+tourist cabins --, but also because the estimated effect size of a single
 private cottage ($\beta_{\text{private cottage}} = -0.0081$) was much smaller than
 that of a single tourist cabin ($\beta_{\text{tourist cabin}} = -2.654$;
-Table C3, Fig. C6A). However, since private cottages occur at much
+Table C3, Fig. C5A). However, since private cottages occur at much
 higher densities, in some areas their overall impact is higher
-than that of tourist cabins (Fig. C6, Fig. 4 in the main text). 
-Comparing an area with only 1
-cottage in a 10 km radius with an area with only 1 tourist cabins in a
+than that of tourist cabins (Fig. C5, Fig. 4 in the main text). 
+Comparing an area with only 1 cottage in a 10 km radius with an area with 
+only 1 tourist cabins in a 
 20 km radius, and assuming all other conditions are similar, the impact
--- measured here as the product between the magnitude of the impact and
-the influence covariate (eq. 4 from the main text) -- is much smaller
-for private cottages (Fig. C6A). In contrast, if we take the areas with
+-- measured here as the product between the effect size and
+the ZoI covariate (eq. 5 from the main text) -- is much smaller
+for private cottages (Fig. C5A). In contrast, if we take the areas with
 higher influence in Hardangervidda -- where the number of private
 cottages sum to 2664 and the (exponentially weighted) number of tourist
 cabins sum to 5 -- the impact of private cottages agglomerates is higher 
-than that of tourist cabins (Fig. C6C). Following
+than that of tourist cabins (Fig. C5C). Following
 the HSF coefficient interpretation from Fieberg et al. (2021), and
 considering that all other conditions are kept similar, 
 a reindeer avoids an area 14.43 ($exp(330 \cdot 0.0081) = 14.43$) times 
@@ -1602,7 +1596,7 @@ xtable::xtable(moddf)
 ```
 
 ```{r model_coef_table, echo=FALSE, eval=TRUE}
-kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_3", 'Magnitude of the impact (model coefficients) of the most parsimonious model of space use for reindeer, including private cottages and tourist cabins. The table show the coefficient estimates (scaled back to the scale of variation of the original data), their standard error (SE, in the standardized scale of the variables), and the significance (p). ``pc" are the bio-climatic principal components and ``poly" are the coefficients of a quadratic function of pc.')) %>%
+kableExtra::kbl(moddf, booktabs = T, digits = 0, caption = caption("Tab_3", 'Effect size (model coefficients) of the most parsimonious model of space use for reindeer, including private cottages and tourist cabins. The table show the coefficient estimates (scaled back to the scale of variation of the original data), their standard error (SE, in the standardized scale of the variables), and the significance (p). ``pc" are the bio-climatic principal components and ``poly" are the coefficients of a quadratic function of pc.')) %>%
   kableExtra::kable_styling(latex_options = "HOLD_position", position = "center")
 ```
 
@@ -1623,17 +1617,17 @@ points  <- 0
 
 df_plots <- list()
 for(i in 1:length(infra)) {
-  df_plots[[i]] <- plot_influence2d(points, zoi_est[i], cumulative = cum[i],
-                                    fun = func[i], 
-                                    range_plot = c(-20, 20), step = 0.1, 
-                                    return_df = TRUE)$influence_df %>% 
-      dplyr::mutate(infrastructure = infra[i],
-                    measure = ifelse(cum[i], "cumulative", "nearest"),
-                    influence = func[i], 
-                    zoi = zoi_est[i],
-                    # multiply y per beta
-                    y_displaced = y + (i-1),
-                    impact = abs(as.numeric(coefs[i]))*y)
+  df_plots[[i]] <- plot_zoi1d(points, zoi_est[i], cumulative = cum[i],
+                              fun = func[i], 
+                              range_plot = c(-20, 20), step = 0.1, 
+                              return_df = TRUE)$influence_df %>% 
+    dplyr::mutate(infrastructure = infra[i],
+                  measure = ifelse(cum[i], "cumulative", "nearest"),
+                  influence = func[i], 
+                  zoi = zoi_est[i],
+                  # multiply y per beta
+                  y_displaced = y + (i-1),
+                  impact = abs(as.numeric(coefs[i]))*y)
 }
 df_plots
 
@@ -1688,8 +1682,8 @@ df_plots_maxmin <- df_plots %>%
                                     impact*range_private_cabins[1],
                                     impact*range_public_cabins_high[1]),
                 impact_median = ifelse(infrastructure == "Private cottages", 
-                                    impact*range_private_cabins[2],
-                                    impact*range_public_cabins_high[2]),
+                                       impact*range_private_cabins[2],
+                                       impact*range_public_cabins_high[2]),
                 impact_max = ifelse(infrastructure == "Private cottages", 
                                     impact*range_private_cabins[3],
                                     impact*range_public_cabins_high[3]))
@@ -1749,17 +1743,17 @@ ggsave("reindeer_zoi_impact_single_multiple_features.png", plot = g7,
        units = "cm", dpi = 300)
 ```
 
-```{r beta_and_zoi_plot, echo=FALSE, eval=TRUE, fig.cap='Impact of private cottages and tourist cabins considering (A) only 1 feature, (B) the median number of features (103 for private cottages, 0.38 for tourist cabins), and (C) the maximum number of each type of feature (2664 for cottages, 5 for cabins), given their respective influence functions and ZoI. The impact presented here is the multiplication between the magnitude of the impact (the model coefficients) and the cumulative influence variable (eq. 4 in the main text). The impact of only one private cottage is negligible (A). At their median values, the impacts of private and public cabins are comparable (B), while at their maximum the cumulative impact of private cottages might be higher than that of tourist cabins (C).'}
+```{r beta_and_zoi_plot, echo=FALSE, eval=TRUE, fig.cap='Impact of private cottages and tourist cabins considering (A) only 1 feature, (B) the median number of features (103 for private cottages, 0.38 for tourist cabins), and (C) the maximum number of each type of feature (2664 for cottages, 5 for cabins), given their respective estimated ZoI shape and radius The impact presented here is the multiplication between the effect size (the model coefficients) and the cumulative ZoI variable (eq. 5 in the main text). The impact of only one private cottage is negligible (A). At their median values, the impacts of private and public cabins are comparable (B), while at their maximum the cumulative impact of private cottages might be higher than that of tourist cabins (C).'}
 g6
 ```
 
 When cumulative impacts of infrastructure are predicted in space by multiplying
-the magnitude of the impacts by the cumulative influence measures, we
+the effect size and the cumulative ZoI metrics, we
 see how the relative impact of private cottages and large tourist cabins
-change across space (see Fig. 4 in the main text). 
+change across space (see Fig. 5 in the main text). 
 Since reindeer avoided high densities of both infrastructure types at
 relatively large extents, areas of high habitat suitability for reindeer
-correspond to those in which the cumulative influence of both
+corresponded to those in which the cumulative ZoI of both
 infrastructure is low -- what matches with the locations used by
 reindeer, indicated through the GPS data.
 
@@ -1836,13 +1830,13 @@ rgrass7::use_sp()
 priv_cab_g <- util_find_layer_GRASS(list("private_cabins", "cumulative", "threshold", "10000"),
                                     layers_grass = layers)
 pub_cab_high_g <- util_find_layer_GRASS(list("public_cabins_high", "cumulative", "exp_decay", "20000"),
-                                    layers_grass = layers)
+                                        layers_grass = layers)
 
 # find the equivalent layers with influence of the nearest
 priv_cab_near_g <- util_find_layer_GRASS(list("private_cabins", "nearest", "threshold", "10000"),
-                                    layers_grass = layers)
+                                         layers_grass = layers)
 pub_cab_high_near_g <- util_find_layer_GRASS(list("public_cabins_high", "nearest", "exp_decay", "20000"),
-                                    layers_grass = layers)
+                                             layers_grass = layers)
 
 m_vars_g <- c(priv_cab_g, pub_cab_high_g,
               "Vegetation_NORUT_2009",
@@ -1855,8 +1849,8 @@ ms_pca12 <- "g_BiogeographicalRegions_Norway_PCA_klima"
 ms_pca34 <- "u_bram.van.moorter"
 
 mapsets <- c(ms_cuminf, ms_cuminf, ms_norut, 
-  ms_pca12, ms_pca12, 
-  ms_pca34, ms_pca34)
+             ms_pca12, ms_pca12, 
+             ms_pca34, ms_pca34)
 
 raster_names <- paste(m_vars_g, mapsets, sep = "@")
 
@@ -1908,11 +1902,11 @@ rasters_scaled[[1:2]] <- scale(rasters_scaled[[1:2]])
 classes <- data.frame(id = sort(unique(values(lu_rast))),
                       NORUTreclass = as.character(sort(unique(values(lu_rast)))))
 classes$NORUTreclass <- ifelse(classes$id < 9, "11forest",
-                          ifelse(classes$id < 12, "bog",
-                                 ifelse(classes$id < 21, "mountain",
-                                        ifelse(classes$id < 22, "glacier",
-                                               ifelse(classes$id < 23, "water",
-                                                      ifelse(classes$id < 25,"other", NA))))))
+                               ifelse(classes$id < 12, "bog",
+                                      ifelse(classes$id < 21, "mountain",
+                                             ifelse(classes$id < 22, "glacier",
+                                                    ifelse(classes$id < 23, "water",
+                                                           ifelse(classes$id < 25,"other", NA))))))
 classes$NORUTreclass <- ifelse(classes$NORUTreclass == "mountain", as.character(classes$id), classes$NORUTreclass)
 levels(lu_rast) <- as.data.frame(classes)
 activeCat(lu_rast)
@@ -1937,9 +1931,9 @@ var_infra <- "private_cabins"
 impact_priv <- -1*(all_coefs[grepl(var_infra, names(all_coefs))] *
                      rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
 impact_priv_exp <- exp(-1*all_coefs[grepl(var_infra, names(all_coefs))] *
-                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+                         rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
 impact_priv_exp_sc <- 1-rescale_vals(exp(all_coefs[grepl(var_infra, names(all_coefs))] *
-                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
+                                           rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
 plot(impact_priv)
 plot(private_cabins_v, add = TRUE)
 plot(impact_priv_exp)
@@ -1951,9 +1945,9 @@ var_infra <- "public_cabins_high"
 impact_pub <- -1*(all_coefs[grepl(var_infra, names(all_coefs))] *
                     rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
 impact_pub_exp <- exp(-1*all_coefs[grepl(var_infra, names(all_coefs))] *
-                    rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
+                        rasters_scaled[[grepl(var_infra, names(rasters_scaled))]])
 impact_pub_exp_sc <- 1-rescale_vals(exp(all_coefs[grepl(var_infra, names(all_coefs))] *
-                    rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
+                                          rasters_scaled[[grepl(var_infra, names(rasters_scaled))]]))
 plot(impact_pub)
 plot(public_cabins_high_v, add = TRUE)
 plot(impact_pub_exp)
@@ -1979,16 +1973,16 @@ use_sf <- st_as_sf(use_v)
 tmap_mode("view")
 tm_basemap("OpenTopoMap") +
   tm_shape(raster_nearest$private_cabins_inf_nearest_threshold10000,
-           name = "NearInf Private cabins 10km") +
+           name = "NearZoI Private cabins 10km") +
   tm_raster(style = "cont") +
   tm_shape(raster_nearest$public_cabins_high_inf_nearest_exp_decay20000,
-           name = "NearInf Public cabins high 20km") +
+           name = "NearZoI Public cabins high 20km") +
   tm_raster(style = "cont") +
   tm_shape(rasters$private_cabins_cumulative_threshold_10000,
-           name = "CumInf Private cabins 10km") +
+           name = "CumZoI Private cabins 10km") +
   tm_raster(style = "log10") +
   tm_shape(rasters$public_cabins_high_cumulative_exp_decay_20000,
-           name = "CumInf Public cabins high 20km") +
+           name = "CumZoI Public cabins high 20km") +
   tm_raster(style = "cont") +
   tm_shape(impact_priv, name = "Impact Private cabins 10km") +
   tm_raster(style = "cont") +
@@ -2047,7 +2041,7 @@ p_pub_cab <- tm_shape(study_area_sf, name = "Study area") +
   tm_layout(main.title = "Tourist cabins",
             main.title.size = 1, legend.title.size = 1)
 p_pub_cab
-  
+
 # Private cottages cumulative influence
 p_priv_cab_cuminf <- tm_shape(rasters[[1]]) +
   tm_raster(style = "log10", title = "# cottages") +
@@ -2055,7 +2049,7 @@ p_priv_cab_cuminf <- tm_shape(rasters[[1]]) +
   tm_borders() +
   tm_shape(private_cabins_sf, name = "Private cottages") +
   tm_dots() +
-  tm_layout(main.title = "Cumulative influence - Private cottages", 
+  tm_layout(main.title = "Cumulative zone of influence - Private cottages", 
             legend.frame = T,
             main.title.size = 1, legend.title.size = 1)
 p_priv_cab_cuminf
@@ -2067,7 +2061,7 @@ p_pub_cab_cuminf <- tm_shape(rasters[[2]]) +
   tm_borders() +
   tm_shape(public_cabins_high_sf, name = "Tourist cabins") +
   tm_dots() +
-  tm_layout(main.title = "Cumulative influence - Tourist cabins",
+  tm_layout(main.title = "Cumulative zone of influence - Tourist cabins",
             legend.frame = T,
             main.title.size = 1, legend.title.size = 1)
 p_pub_cab_cuminf
@@ -2079,7 +2073,7 @@ p_priv_cab_nearinf <- tm_shape(raster_nearest[[1]]) +
   tm_borders() +
   tm_shape(private_cabins_sf, name = "Private cottages") +
   tm_dots() +
-  tm_layout(main.title = "Nearest influence - Private cottages",
+  tm_layout(main.title = "Nearest zone of influence - Private cottages",
             legend.frame = T,
             main.title.size = 1, legend.title.size = 1)
 p_priv_cab_nearinf
@@ -2091,7 +2085,7 @@ p_pub_cab_nearinf <- tm_shape(raster_nearest[[2]]) +
   tm_borders() +
   tm_shape(public_cabins_high_sf, name = "Tourist cabins") +
   tm_dots() +
-  tm_layout(main.title = "Nearest influence - Tourist cabins",
+  tm_layout(main.title = "Nearest zone of influence - Tourist cabins",
             legend.frame = T,
             main.title.size = 1, legend.title.size = 1)
 p_pub_cab_nearinf
@@ -2101,8 +2095,8 @@ p_priv_cab_impact <- tm_shape(impact_priv) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA,
             breaks = seq(0, 18, by = 5)) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(private_cabins_sf, name = "Private cottages") +
@@ -2116,8 +2110,8 @@ p_priv_cab_impact
 p_priv_cab_impact_sc <- tm_shape(impact_sc[[1]]) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(private_cabins_sf, name = "Private cottages") +
@@ -2131,8 +2125,8 @@ p_priv_cab_impact_sc
 p_priv_cab_impact_exp_sc <- tm_shape(impact_priv_exp_sc) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(private_cabins_sf, name = "Private cottages") +
@@ -2147,8 +2141,8 @@ p_pub_cab_impact <- tm_shape(impact_pub) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA,
             breaks = seq(0, 18, by = 5)) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(public_cabins_sf, name = "Tourist cabins") +
@@ -2163,8 +2157,8 @@ p_pub_cab_impact_sc <- tm_shape(impact_sc[[2]]) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA, 
             breaks = seq(0, 1, 0.2)) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(public_cabins_sf, name = "Tourist cabins") +
@@ -2178,8 +2172,8 @@ p_pub_cab_impact_sc
 p_pub_cab_impact_exp_sc <- tm_shape(impact_pub_exp_sc) +
   tm_raster(style = "cont", title = "Impact", 
             palette = jcolors::jcolors("pal12"), midpoint = NA) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(public_cabins_sf, name = "Tourist cabins") +
@@ -2193,8 +2187,8 @@ p_pub_cab_impact_exp_sc
 p_suitability <- tm_shape(pred_sc) +
   tm_raster(style = "cont", title = "Suitability", 
             palette = jcolors::jcolors("pal11")) +
-            # palette = get_brewer_pal("Reds", n = 20)) +
-            # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
+  # palette = get_brewer_pal("Reds", n = 20)) +
+  # palette = viridisLite::plasma(20, begin = 0.35, end = 1)) +
   tm_shape(study_area_sf, name = "Study area") +
   tm_borders() +
   # tm_shape(use_sf, name = "GPS data") +
@@ -2226,7 +2220,7 @@ if(save) {
 
 <!-- \blandscape -->
 
-```{r beta_and_zoi_maps_plot2, echo=FALSE, eval=FALSE, results='hide', fig.cap='Maps of the most parsimonious cumulative influence variables and their estimated impacts on reindeer habitat selection for private cottages and large tourist cabins. These maps are showed alongside the reindeer GPS locations in Hardengervidda and the estimated reindeer habitat suitability. Notice that the most suitable areas correspond to areas with low densities of both private cottages and tourist cabins.'}
+```{r beta_and_zoi_maps_plot2, echo=FALSE, eval=FALSE, results='hide', fig.cap='Maps of the most parsimonious cumulative zone of influence variables and their estimated impacts on reindeer habitat selection for private cottages and large tourist cabins. These maps are showed alongside the reindeer GPS locations in Hardengervidda and the estimated reindeer habitat suitability. Notice that the most suitable areas correspond to areas with low densities of both private cottages and tourist cabins.'}
 maps_plot <- tmap::tmap_arrange(p_priv_cab_cuminf, p_pub_cab_cuminf, p_gps,
                                 p_priv_cab_impact, p_pub_cab_impact, p_suitability,
                                 ncol = 3, asp = 0)
