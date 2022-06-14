@@ -204,12 +204,12 @@ g1 <- ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
   stat_function(fun = gaussian_decay, args = list(zoi = zoi, oneside = F, zoi_decay_threshold = 0.05), aes(linetype = "Gaussian")) +
   annotate("segment", x = 0, xend = zoi-0.05, y = 0.03, yend = 0.03, color = grey(0.3),
            arrow = arrow(ends = "both", angle = 90, length = unit(.2,"cm"))) +
-  annotate("text", x = 1.5, y = 0.05, color = grey(0.3), size = 3, label = "Radius") +
-  scale_linetype_manual("Zone of  
-                        Influence", 
+  annotate("text", x = 1.5, y = 0.05, color = grey(0.3), size = 3, 
+           label = "list(Radius, italic(r))", parse = T) +
+  scale_linetype_manual("Shape", 
                         values = 1:4,
                         breaks = curves) +
-  labs(x = "Distance, *d* (km)", y = "\u03C6") +
+  labs(x = "Distance, *d* (km)", y = "Zone of Influnce, \u03C6") +
   # theme_classic(base_size = 14) +
   mdthemes::md_theme_classic(base_size = 14) +
   inset_element(house, left = 0.47, right = 0.53, bottom = 0.01, top = 0.06) 
@@ -226,15 +226,15 @@ g2 <- ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
   stat_function(fun = threshold_decay, args = list(zoi = zoi, oneside = F), aes(linetype = "Threshold")) +
   stat_function(fun = bartlett_decay, args = list(zoi = zoi, oneside = F), aes(linetype = "Linear")) +
   stat_function(fun = gaussian_decay, args = list(zoi = zoi, oneside = F, zoi_decay_threshold = 0.05), aes(linetype = "Gaussian")) +
-  annotate("segment", x = 0, xend = zoi-0.05, y = 0.05, yend = 0.05, color = grey(0.3),
+  annotate("segment", x = 0, xend = zoi-0.05, y = 0.03, yend = 0.03, color = grey(0.3),
            arrow = arrow(ends = "both", angle = 90, length = unit(.1,"cm"))) +
-  annotate("text", x = 1.5, y = 0.09, color = grey(0.3), size = 3, label = "Radius") +
-  scale_linetype_manual("Zone of  
-                        Influence", 
+  annotate("text", x = 1.5, y = 0.05, color = grey(0.3), size = 3, 
+           label = "list(Radius, italic(r))", parse = T) +
+  scale_linetype_manual("Shape", 
                         values = 1:4,
                         breaks = curves) +
-  labs(x = "Distance, *d* (km)", y = "\u03C6") +
-  ylim(0, 2) +
+  labs(x = "Distance, *d* (km)", y = "Zone of Influnce, \u03C6") +
+  ylim(0, 1) +
   # theme_classic(base_size = 14) +
   mdthemes::md_theme_classic(base_size = 14) +
   inset_element(house, left = 0.47, right = 0.53, bottom = 0.01, top = 0.06) 
@@ -244,7 +244,7 @@ g2
 ggsave("zoi_shapes_noexp_new.png", plot = g2, path = "text/figures/", width = 15, height = 10, 
        units = "cm", dpi = 300)
 
-#----------------------------------
+  #----------------------------------
 # settings
 points <- c(0.5, 4.5, 7, 8)
 zoi <- 2.5
@@ -254,7 +254,8 @@ funs <- c("threshold_decay", "linear_decay", "gaussian_decay")
 funs_name <- c("Threshold", "Linear", "Gaussian")
 # cumulative
 cums <- c(F, T)
-cums_name <- c("phi[nearest]", "phi[cumulative]")
+# cums_name <- c("phi[nearest]", "phi[cumulative]")
+cums_name <- c("Nearest", "Cumulative")
 
 df_plots <- list()
 i <- 1
@@ -282,7 +283,7 @@ g3 <- df_plots %>%
   geom_line() + 
   # inset_element(house, left = 0.01, right = 0.08, bottom = 0.02, top = 0.08) +
   facet_grid(cum~fun, labeller = label_parsed) +
-  labs(x = "Space (km)", y = "\u03C6") +
+  labs(x = "Space (km)", y = "Zone of Influence, \u03C6") +
   scale_x_continuous(breaks = c(0, 3, 6, 9)) +
   theme_classic(base_size = 14)
 for(i in 1:length(points))
@@ -292,7 +293,7 @@ for(i in 1:length(points))
 g3
 
 # save
-ggsave("zoi_cum_near.png", plot = g3, path = "text/figures/", width = 15, height = 10, 
+ggsave("zoi_cum_near_new.png", plot = g3, path = "text/figures/", width = 15, height = 10, 
        units = "cm", dpi = 300)
 
 g_all <- ggpubr::ggarrange(g2, g3, nrow = 2, labels = c("A", "B"))
@@ -325,7 +326,7 @@ g4 <- ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
   annotate("segment", x = -3.5, xend = -3.5, y = 0, yend = 2, color = grey(0),
            size = 1, arrow = arrow(ends = "both", angle = 90, length = unit(.1,"cm"))) +
   annotate("text", x = 1.5, y = 0.09, color = grey(0.3), size = 3, 
-           label = "Zone of Influence") +
+           label = "list(ZoI~radius, italic(r))", parse = T) +
   annotate("text", x = -3.8, y = 1, color = grey(0.3), size = 3, 
            label = "Effect size, \u03B2", angle = 90) +
   # annotate("text", x = 3.9, y = 0.81, color = grey(0), size = 7, 
