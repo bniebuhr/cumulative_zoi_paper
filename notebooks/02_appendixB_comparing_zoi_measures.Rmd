@@ -1,0 +1,995 @@
+---
+title: "Appendix B"
+subtitle: "Comparing the zone of influence of the nearest feature with the cumulative zone of influence of multiple features"
+author: ""
+date: ""
+geometry: margin=2cm
+abstract: | 
+  In this document, we aim to illustrate in which conditions the zone of influence (ZoI)
+  of the nearest feature alone ($\phi_{nearest}$) and the cumulative zone of influence 
+  of multiple features ($\phi_{cumulative}$) diverge or converge. First we explore 
+  it by simulating landscapes with different spatial configurations of infrastructure 
+  features. Second, we calculate these metrics and compare them for tourist-related 
+  infrastructure in the Hardangervidda wild reindeer area in Southern Norway. 
+  Understanding how these ZoI measures change across landscapes is important 
+  to aid the interpretation of their effects on ecological contexts. This document 
+  complements the arguments presented in Niebuhr et al. *Estimating the cumulative 
+  impact and zone of influence of anthropogenic infrastructure on biodiversity.*
+output: 
+  NinaR::jensAnalysis:
+    highlight: tango
+    fig_caption: yes
+    toc: yes
+header-includes:
+  \usepackage{float}
+  \usepackage{caption}
+  \DeclareCaptionLabelFormat{Sformat}{#1 B#2}
+  \captionsetup[figure]{labelformat=Sformat}
+  \captionsetup[table]{labelformat=empty}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+  
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+library(kableExtra)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  fig.pos = 'H',
+  message=FALSE,
+  warning=FALSE,
+  options(scipen=999)
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+
+# captions
+library(captioner)
+caption <- captioner("Table B", FALSE)
+```
+
+# Introduction
+
+There are several dimensions that underlie the assessment of the impacts of 
+anthropogenic infrastructure on wildlife. When performing environmental impact 
+assessments, one aims not only to to find which factors affect wildlife and how strongly, 
+but also (i) at which spatial scale there are impacts (the Zone of Influence, ZoI) and 
+(ii) how these impacts sum and interact when (as it is often the case) 
+there are multiple infrastructure and vectors of landscape modification. In the 
+main text of this manuscript, we argue that the cumulative ZoI ($\phi_{cumulative}$) 
+-- proportional to the spatial density of infrastructure features -- 
+might better represent the spatial variation of the cumulative impact of multiple 
+features in the landscape than considering the ZoI based on 
+the nearest feature only ($\phi_{nearest}$). How similar the two ZoI metrics are 
+and whether one can distinguish between these them, however, might vary depending 
+on the number of features in the landscape, how these features are distributed 
+in space, and what is the ZoI of each of those features.
+
+In this document we aim to assess in which conditions $\phi_{nearest}$ and 
+$\phi_{cumulative}$ converge and diverge, to allow a better interpretation of 
+their effects on biological response variables in ecological contexts. 
+We first simulate landscapes with point-type infrastructure spread following 
+different patterns, calculate both ZoI metrics, considering multiple ZoI radii, 
+and assess when and how these variables might represent different sources of 
+spatial variation. Second, we do the same for a real landscape, the Hardangervidda 
+wild reindeer area in Southern Norway, which is the stage for the the habitat 
+selection analyses presented in the main text and in Appendix C.
+
+# Zone of influence metrics in simulated landscapes
+
+## Simulating landscapes
+
+We start by simulating landscapes using point-type infrastructure. They could represent 
+the spatial location of houses, cabins, or wind turbines, for example. We set 
+30x30 km^2^ landscapes and simulate points following different spatial patterns:
+regular, random, and clumped distribution of points. For the clumped distribution, 
+we set four landscapes by varying the number of clusters and the size of the clusters: 
+point features are spread on either 5 or only 1 focal cluster, and we choose two 
+possible radii of these clusters, corresponding to one more and one less clumped 
+point distribution (radius = 5% [1.5 km] and 15% [4.5 km] of the extent of the 
+landscape[^1]). In such a way, we aim to represent a gradient of spatial clustering 
+of the simulated point features, to evaluate how the ZoI metrics 
+vary within this gradient. To keep the interpretation simple, we fix the total number 
+of features in the landscape to $n_k = 100$. Yet, we also performed simulations with 
+different numbers of features ($n_k = 10$) and the results are qualitatively similar.
+
+[^1]: To be precise, these values correspond to the standard deviation of the distance 
+from points to the center of the cluster, simulated using a bivariate Gaussian distribution. 
+To ease the interpretation, however, we call them radii of the clusters.
+
+The landscapes were simulated using the function `set_points()` from the `oneimpact` package. 
+Fig. B1 shows six example landscapes simulated in this gradient of clustering.
+
+```{r load_packages, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+#Load packages
+
+# data manipulation
+library(dplyr)
+library(purrr)
+library(ggplot2) # for plot
+library(ggpubr) # for plot
+library(lsr) # for correlations
+
+# spatial packages
+library(mobsim)
+library(terra)
+library(landscapetools)
+library(sf)
+library(spatstat)
+
+# retrieve maps for reindeer from GRASS
+library(rgrass7)
+
+# oneimpact package
+library(oneimpact)
+```
+
+```{r parameters, echo=FALSE, eval=TRUE}
+# Set parameters for the simulation
+set.seed(12)
+
+# random, gradient, single center, multiple centers
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5_15", "clumped1_15", "clumped5_5", "clumped1_5")
+nfeat <- c(100) # number of features
+res <- 10 # resolution
+ext <- 30000 # extent of the landscape
+nc <- c(5, 1) # number of centers or clusters for clumped
+wd <- c(0.15, 0.05)*ext # width of the "clusters"
+
+# ZoI values
+zoi_vals <- c(20, 50, 100, 250, 500, 750, 1000, 1250, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000)
+
+# parameters
+parms_df1 <- expand.grid(method = methods, n_features = nfeat,
+                         centers = nc[1], width = wd) # first 3 landscapes
+parms_df2 <- expand.grid(method = methods[3], n_features = nfeat,
+                         centers = nc[2], width = wd) # parameters for clumped1
+parms_df <- dplyr::bind_rows(parms_df1, parms_df2) %>% 
+  dplyr::arrange(desc(width), n_features, method) %>% 
+  dplyr::slice(1:4, 7:8)
+```
+
+```{r create_points_distances, echo=FALSE, eval=TRUE}
+# simulate points
+pts_10 <- parms_df %>% 
+  purrr::pmap(set_points, res = res,
+              extent_x = c(0, ext),
+              extent_y = c(0, ext),
+              buffer_around = 12000)
+
+# coordinates
+pts_coords <- pts_10 %>% 
+  purrr::map(first)
+
+# raster with points
+pts_all_rast_10 <- pts_10 %>% 
+  purrr::map(~ .[[2]])
+
+pts_all_rast_100 <- pts_all_rast_10 %>% 
+  purrr::map(terra::aggregate, fact = 10, fun = "max", na.rm = TRUE)
+
+# vector with points, for plotting
+pts_vect_list <- pts_coords %>% 
+  purrr::map(sf::st_as_sf, coords = c(1:2), crs = terra::crs(pts_all_rast_10[[1]]))
+for(i in 1:length(pts_vect_list)) pts_vect_list[[i]]$spatial_dist <- name[i] 
+pts_vect <- dplyr::bind_rows(pts_vect_list) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name),
+                labels = paste(LETTERS[spatial_dist], spatial_dist, sep = ": "))
+
+# landscape delimitation
+landscape <- st_bbox(c(xmin = 0, xmax = ext, ymax = 0, ymin = ext), crs = terra::crs(pts_all_rast_10[[1]])) %>% 
+  st_as_sfc()
+```
+
+```{r plot_points, echo=FALSE, eval=TRUE, results='hide', fig.cap='Six example simulated landscapes with points distributed in a gradient of clustering, from regular to random to clustered. The names of the landscapes with clustered distributions (C-F) also present the number of clusters and the radius of each cluster. For instance, ``cluster1\\_15" represents the clumped distribution with 1 single cluster with radius = 15\\% of the landscape extent.'}
+# plot
+pts_vect %>% 
+ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+
+landscapes_to_save <- pts_vect %>% 
+  ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank(),
+        strip.text.x = element_blank())
+# ggsave("../text/extra_figs/extra/simulated_landscapes.png", plot = landscapes_to_save, 
+#        width = 20, height = 15, units = "cm", dpi = 300)
+```
+
+```{r prepare_df, echo=FALSE, eval=TRUE}
+# crate landscapes, separating each point in a different
+# raster, to calculate distances
+create_landscapes <- tibble::tibble(
+  spatial_dist = name,
+  n_features = rep(nfeat, length(name)),
+  # mean isolation
+  mean_isolation = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext)),
+  # mean distance between points
+  mean_dist = map_dbl(pts_coords, function(x) mean(dist(x))),
+  # mean nearest neighbor distance
+  mean_nndist = map_dbl(pts_coords, function(x) mean(spatstat.geom::nndist(x))),
+  # points coordinates, all together
+  points_10 = pts_all_rast_10,
+  points_100 = pts_all_rast_100
+)
+
+# simplify tibble with landscapes and distances
+landscapes_dist <- create_landscapes %>% 
+  dplyr::mutate(
+    parms = purrr::map(spatial_dist, function(x) {
+      tibble::tibble(zoi = zoi_vals) })
+  ) %>% 
+  tidyr::unnest(parms) %>% 
+  dplyr::mutate(points_rast = ifelse(zoi > 500, points_100, points_10)) %>% 
+  dplyr::select(-c(points_10, points_100))
+
+# map(landscapes_dist$points_rast, terra::res)
+```
+
+```{r parameters10, echo=FALSE, eval=FALSE}
+# Set parameters for the simulation
+set.seed(12)
+
+# random, gradient, single center, multiple centers
+methods <- c("regular", "random", "mobsim")
+name <- c("regular", "random", "clumped5_15", "clumped1_15", "clumped5_5", "clumped1_5")
+nfeat_10 <- c(10) # number of features
+res <- 10 # resolution
+ext <- 30000 # extent of the landscape
+nc <- c(5, 1) # number of centers or clusters for clumped
+wd <- c(0.15, 0.05)*ext # width of the "clusters"
+
+# ZoI values
+zoi_vals <- c(20, 50, 100, 250, 500, 750, 1000, 1250, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000)
+
+# parameters
+parms_df1_10 <- expand.grid(method = methods, n_features = nfeat_10,
+                         centers = nc[1], width = wd) # first 3 landscapes
+parms_df2_10 <- expand.grid(method = methods[3], n_features = nfeat_10,
+                         centers = nc[2], width = wd) # parameters for clumped1
+parms_df_10 <- dplyr::bind_rows(parms_df1_10, parms_df2_10) %>% 
+  dplyr::arrange(desc(width), n_features, method) %>% 
+  dplyr::slice(1:4, 7:8)
+```
+
+```{r create_points_distances10, echo=FALSE, eval=FALSE}
+# simulate points
+pts_10_10 <- parms_df_10 %>% 
+  purrr::pmap(set_points, res = res,
+              extent_x = c(0, ext),
+              extent_y = c(0, ext),
+              buffer_around = 12000)
+
+# coordinates
+pts_coords_10 <- pts_10_10 %>% 
+  purrr::map(first)
+
+# raster with points
+pts_all_rast_10_10 <- pts_10_10 %>% 
+  purrr::map(~ .[[2]])
+
+pts_all_rast_100_10 <- pts_all_rast_10_10 %>% 
+  purrr::map(terra::aggregate, fact = 10, fun = "max", na.rm = TRUE)
+
+# vector with points, for plotting
+pts_vect_list_10 <- pts_coords_10 %>% 
+  purrr::map(sf::st_as_sf, coords = c(1:2), crs = terra::crs(pts_all_rast_10_10[[1]]))
+for(i in 1:length(pts_vect_list_10)) pts_vect_list_10[[i]]$spatial_dist <- name[i] 
+pts_vect_10 <- dplyr::bind_rows(pts_vect_list_10) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name),
+                labels = paste(LETTERS[spatial_dist], spatial_dist, sep = ": "))
+
+# landscape delimitation
+landscape_10 <- st_bbox(c(xmin = 0, xmax = ext, ymax = 0, ymin = ext), crs = terra::crs(pts_all_rast_10_10[[1]])) %>% 
+  st_as_sfc()
+```
+
+```{r plot_points10, echo=FALSE, eval=FALSE, results='hide', fig.cap='Six example simulated landscapes with points distributed in a gradient of clustering, from regular to random to clustered. The names of the landscapes with clustered distributions (C-F) also present the number of clusters and the radius of each cluster. For instance, ``cluster1\\_15" represents the clumped distribution with 1 single cluster with radius = 15\\% of the landscape extent.'}
+# plot
+pts_vect_10 %>% 
+ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+
+landscapes_to_save_10 <- pts_vect_10 %>% 
+ggplot() +
+  # geom_sf(data = landscape) +
+  geom_sf() +
+  facet_wrap(~labels) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank(),
+        strip.text.x = element_blank())
+# ggsave("../text/extra_figs/extra/simulated_landscapes_10.png", plot = landscapes_to_save_10, 
+#        width = 20, height = 15, units = "cm", dpi = 300)
+```
+
+```{r prepare_df10, echo=FALSE, eval=FALSE}
+# crate landscapes, separating each point in a different
+# raster, to calculate distances
+create_landscapes_10 <- tibble::tibble(
+  spatial_dist = name,
+  n_features = rep(nfeat_10, length(name)),
+  # mean isolation
+  mean_isolation = map_dbl(pts_coords_10, mean_isolation, n_rand = 150, ext = c(0, ext)),
+  # mean distance between points
+  mean_dist = map_dbl(pts_coords_10, function(x) mean(dist(x))),
+  # mean nearest neighbor distance
+  mean_nndist = map_dbl(pts_coords_10, function(x) mean(spatstat.geom::nndist(x))),
+  # points coordinates, all together
+  points_10 = pts_all_rast_10_10,
+  points_100 = pts_all_rast_100_10
+)
+
+# simplify tibble with landscapes and distances
+landscapes_dist_10 <- create_landscapes_10 %>% 
+  dplyr::mutate(
+    parms = purrr::map(spatial_dist, function(x) {
+      tibble::tibble(zoi = zoi_vals) })
+  ) %>% 
+  tidyr::unnest(parms) %>% 
+  dplyr::mutate(points_rast = ifelse(zoi > 500, points_100, points_10)) %>% 
+  dplyr::select(-c(points_10, points_100))
+
+# map(landscapes_dist$points_rast, terra::res)
+```
+
+## Calculating the zone of influence metrics
+
+For each of the simulated landscapes, we calculate both $\phi_{nearest}$ and 
+$\phi_{cumulative}$ with ZoI radii varying from ~ 0.06% to 40% of the 
+landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares 
+of 30 km extent). For the comparison presented here, we computed both ZoI metrics
+using a linear decay ZoI function (see Fig. 1 in the main text),
+for which the ZoI can be defined only based on the ZoI radius $r$ (see Appendix A).
+
+```{r calc_cuminf, echo=FALSE, eval=FALSE}
+filter_type <- "bartlett"
+
+# calculate cumulative influence
+maps_cuminf <- purrr::map2(landscapes_dist$points_rast, landscapes_dist$zoi, function(x,y) {
+  print("running...")
+  calc_influence_cumulative(x = x, type = "bartlett", zoi = y)
+  })
+
+maps_cuminf <- map(maps_cuminf, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_cuminf, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_cuminf)) terra::writeRaster(maps_cuminf[[i]],
+                                                   filename = sprintf("../data/test/cuminf%03d.tif", i), 
+                                                   overwrite = TRUE)
+```
+
+```{r load_cuminf, eval=TRUE, echo=FALSE}
+maps_cuminf <- list()
+cuminf_rasts_full <- list.files("../data/test/", pattern = "^cuminf\\d{3}", full.names = T)
+for(i in 1:nrow(landscapes_dist)) maps_cuminf[[i]] <- terra::rast(cuminf_rasts_full[[i]])
+```
+
+```{r calc_nearest, eval=FALSE, echo=FALSE}
+# calculate cumulative influence
+maps_nearestinf <- purrr::map2(landscapes_dist$points_rast, landscapes_dist$zoi, function(x,y) {
+  print("running...")
+  calc_influence_nearest(x = x, transform = filter_type, zoi = y)
+  })
+
+maps_nearestinf <- map(maps_nearestinf, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_nearest, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_nearestinf)) terra::writeRaster(maps_nearestinf[[i]],
+                                                       filename = sprintf("../data/test/nearest%03d.tif", i),
+                                                       overwrite = TRUE)
+```
+
+```{r load_nearest, eval=TRUE, echo=FALSE}
+maps_nearestinf <- list()
+nearest_rasts_full <- list.files("../data/test/", pattern = "^nearest\\d{3}", full.names = T)
+for(i in 1:nrow(landscapes_dist)) maps_nearestinf[[i]] <- terra::rast(nearest_rasts_full[[i]])
+```
+
+
+```{r calc_cuminf10, echo=FALSE, eval=FALSE}
+filter_type <- "bartlett"
+
+# calculate cumulative influence
+maps_cuminf_10 <- purrr::map2(landscapes_dist_10$points_rast, landscapes_dist_10$zoi, function(x,y) {
+  print("running...")
+  calc_influence_cumulative(x = x, type = filter_type, zoi = y)
+  })
+
+maps_cuminf_10 <- purrr::map(maps_cuminf_10, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_cuminf10, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_cuminf_10)) terra::writeRaster(maps_cuminf_10[[i]],
+                                                      filename = sprintf("../data/test/cuminf_10_%03d.tif", i),
+                                                      overwrite = TRUE)
+```
+
+```{r load_cuminf10, eval=FALSE, echo=FALSE}
+maps_cuminf_10 <- list()
+cuminf_rasts_full_10 <- list.files("../data/test/", pattern = "^cuminf_10_", full.names = T)
+for(i in 1:nrow(landscapes_dist_10)) maps_cuminf_10[[i]] <- terra::rast(cuminf_rasts_full_10[[i]])
+```
+
+```{r calc_nearest10, eval=FALSE, echo=FALSE}
+filter_type <- "bartlett"
+
+# calculate cumulative influence
+maps_nearestinf_10 <- purrr::map2(landscapes_dist_10$points_rast, landscapes_dist_10$zoi, function(x,y) {
+  print("running...")
+  calc_influence_nearest(x = x, type = filter_type, zoi = y)
+  })
+
+maps_nearestinf_10 <- map(maps_nearestinf_10, terra::crop, y = terra::ext(c(c(0, ext), c(0, ext))))
+```
+
+```{r save_nearest10, eval=FALSE, echo=FALSE}
+for(i in 1:length(maps_nearestinf_10)) terra::writeRaster(maps_nearestinf_10[[i]],
+                                                          filename = sprintf("../data/test/nearest_10_%03d.tif", i),
+                                                          overwrite = TRUE)
+```
+
+```{r load_nearest10, eval=FALSE, echo=FALSE}
+maps_nearestinf_10 <- list()
+nearest_rasts_full_10 <- list.files("../data/test/", pattern = "nearest_10_", full.names = T)
+for(i in 1:nrow(landscapes_dist_10)) maps_nearestinf_10[[i]] <- terra::rast(nearest_rasts_full_10[[i]])
+```
+
+
+
+```{r calculate_corr, eval=TRUE, echo=FALSE}
+landscapes_dist <- landscapes_dist %>% 
+  dplyr::mutate(
+    rast_nearest = maps_nearestinf,
+    rast_cuminf = maps_cuminf,
+    corr = purrr::map2(rast_nearest, rast_cuminf, function(x, y)
+      cor(terra::values(x), terra::values(y))),
+    sd_nearest = purrr::map_dbl(rast_nearest,
+                                function(x) global(x, fun = "sd", na.rm = TRUE)$sd),
+    mn_nearest = purrr::map_dbl(rast_nearest,
+                                function(x) global(x, fun = "mean", na.rm = TRUE)$mean),
+    sd_cuminf = purrr::map_dbl(rast_cuminf, 
+                               function(x) global(x, fun = "sd", na.rm = TRUE)$sd),
+    mn_cuminf = purrr::map_dbl(rast_cuminf,
+                               function(x) global(x, fun = "mean", na.rm = TRUE)$mean)) %>% 
+  tidyr::unnest(corr) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name[c(1,2,3,4,5,6)],
+                labels = paste(LETTERS[1:length(name)], name[c(1,2,3,4,5,6)], sep = ": ")),
+                zoi_ext = zoi/ext)
+```
+
+```{r calculate_corr10, eval=FALSE, echo=FALSE}
+landscapes_dist_10 <- landscapes_dist_10 %>% 
+  dplyr::mutate(
+    rast_nearest_10 = maps_nearestinf_10,
+    rast_cuminf_10 = maps_cuminf_10,
+    corr = purrr::map2(rast_nearest_10, rast_cuminf_10, function(x, y)
+      cor(terra::values(x), terra::values(y))),
+    sd_nearest = purrr::map_dbl(rast_nearest_10,
+                                function(x) global(x, fun = "sd", na.rm = TRUE)$sd),
+    sd_cuminf = purrr::map_dbl(rast_cuminf_10, 
+                               function(x) global(x, fun = "sd", na.rm = TRUE)$sd)) %>% 
+  tidyr::unnest(corr) %>% 
+  dplyr::mutate(spatial_dist = factor(spatial_dist, levels = name[c(1,2,3,4,5,6)],
+                labels = paste(LETTERS[1:length(name)], name[c(1,2,3,4,5,6)], sep = ": ")),
+                zoi_ext = zoi/ext)
+```
+
+## Visualizing the zone of influence metrics
+
+To visualize qualitatively how different are $\phi_{nearest}$ and $\phi_{cumulative}$, 
+we plot them for different spatial configuration of features, considering different 
+ZoI radii. We see in Figures B2, B3, and B4 the two metrics for $r$ = 1.6%, 5%, 
+and 10% of the landscape extent (500, 1500, and 3000 m). 
+When the ZoI radius $r$ is small compared to the landscape extent, the two ZoI metrics 
+are similar and, in the computation of $\phi_{cumulative}$, there is interaction 
+between the ZoI of multiple features only for very clustered feature distributions 
+(Fig. B2). As $r$ increases, however, going beyond the minimum distance between 
+features, the ZoI from different features add up in the calculation of
+$\phi_{cumulative}$ and the two ZoI metrics diverge (Fig. B3 and B4). 
+Notice that the values in the color scale change between ZoI metrics for the different
+conditions of feature spatial configuration in Figs. B2-B4.
+
+```{r viz_several_500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 1.66\\% of the landscape extent (500 m)."}
+which_landscapes <- c(0:2, 5)
+indices <- which_landscapes*length(zoi_vals) + 7
+to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_landscapes+1], 2), 
+                       rep(c("nearest", "cumulative"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+```{r viz_several_1500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 5\\% of the landscape extent (1500 m)."}
+which_landscapes <- c(0:2, 5)
+indices <- which_landscapes*length(zoi_vals) + 9
+to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_landscapes+1], 2), 
+                       rep(c("nearest", "cumulative"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+```{r viz_several_3000, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 10\\% of the landscape extent (3000 m)."}
+which_landscapes <- c(0:2, 5)
+indices <- which_landscapes*length(zoi_vals) + 11
+to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
+names(to_viz) <- paste(rep(name[which_landscapes+1], 2), 
+                       rep(c("nearest", "CumInf"), each = 4), 
+                       sep = ": ")
+
+plot(to_viz, nc = 4)
+```
+
+## Correlation and variation in the ZoI metrics
+
+To understand quantitatively how similar are $\phi_{nearest}$ and $\phi_{cumulative}$ 
+in different conditions, we calculated the Pearson correlation coefficient between 
+them, pixel-by-pixel. We also calculated the coefficient of variation (CV, the ratio 
+between the standard deviation and the mean) for each measure for each landscape, 
+as an ancillary quantity to interpret their correlation.
+
+As seen in the plots above (Figs. B2-B4), when the minimum distance between features
+is larger than $2r$, the zone of influence of different features does not overlap 
+and $\phi_{nearest}$ is similar to $\phi_{cumulative}$ (correlation = 1; Fig. B5). 
+This happens when the ZoI of each feature is too small to overlap -- when either 
+the ZoI is small enough or there is a low number of features sparsely distributed 
+in space. This is easily noticed for the regular distribution 
+of points, in which the relative minimum distance between points is high 
+(= 10% of the landscape or 3000 m; Fig. B2 and B3, Fig. B5A), 
+but less evident in the other spatial configuration of points, since the minimum distance between
+points if very small (Fig. B5B-F). As $r$ increases, the two Zoi metrics diverge.
+Because $\phi_{nearest}$ does not account for cumulative effects, as $r$ increases 
+its CV decreases faster than the CV of $\phi_{cumulative}$, what explains why 
+the two metrics diverge (Fig. B6).
+The decrease in correlation goes on until a given ZoI radius for which the gradient 
+represented by $\phi_{nearest}$ starts to get similar to $\phi_{cumulative}$ again[^2], 
+as shown in Fig. B5. 
+This is mostly evident for more clustered distributions of features (Fig. B5D-F). 
+The point of inflection is related to the radius of the clusters of features.
+For ZoI radii larger than the cluster radius, the variation in $\phi_{nearest}$ 
+within the clusters vary little compared to their values outside the cluster (Fig. B6), 
+and the cluster of features starts to act as a ``super-feature" 
+(e.g. groups of houses or wind turbines behave as urban areas or wind parks, 
+respectively).
+
+[^2]: Even though the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ 
+increases for large ZoI radii and clustered distributions of features, the absolute 
+scale of each ZoI metric measure is different -- see the values in the color scale 
+in Figs. B2-B4.
+
+```{r correlations, eval=TRUE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent)."}
+# plot
+dat_isol <- landscapes_dist %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation),
+                   mean_dist = unique(mean_dist),
+                   mean_nndist = unique(mean_nndist)) %>% 
+  dplyr::mutate(min_dist = map_dbl(pts_coords, function(x) min(dist(x))),
+                max_dist = map_dbl(pts_coords, function(x) max(dist(x))),
+                min_nndist = map_dbl(pts_coords, function(x) min(spatstat.geom::nndist(x))),
+                iso = map_dbl(pts_coords, mean_isolation, n_rand = 150, ext = c(0, ext)),
+                size_cluster = c(NA, NA, wd[1], wd[1], wd[2], wd[2]))
+
+landscapes_plot <- landscapes_dist %>% 
+  # dplyr::filter(spatial_dist == "A: regular") %>% 
+  ggplot(aes(zoi_ext, abs(corr))) +
+  geom_vline(data = dat_isol, aes(xintercept = min_dist/ext/2), linetype = 2) +
+  geom_vline(data = dat_isol, aes(xintercept = size_cluster/ext*1.96), linetype = 2, color = "darkgrey") +
+  geom_point() +
+  geom_line() +
+  ylim(0, 1) +
+  facet_wrap(~spatial_dist, scales = "free_y") +
+  labs(x = "Zone of Influence radius", 
+       y = "Correlation between ZoI metrics",
+       color = "Spatial distribution",
+       linetype = "Mean n.n. distance") +
+  theme_bw() +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(#axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        ) #+
+  #scale_x_continuous(trans='log10')
+
+# save
+ggsave("../text/extra_figs/extra/correlations_no_title.png", 
+       plot = landscapes_plot + theme(strip.text.x = element_blank()),
+       width = 15, height = 10, units = "cm", dpi = 300)
+
+# plot  
+landscapes_plot
+```
+
+It is important to remark that how clustered a given set of infrastructure features 
+is depends on the extent of the study area. As an example, if the biological 
+response is measured and assessed in a study area that comprises 2 km around a wind 
+farm whose turbines are spread in a few mountain tops, the distribution of wind 
+turbines might be random or somehow aggregated. However, if the study area 
+comprises a much wider area and the biological response is expected to respond at 
+larger extents, and the wind farm is only located in a small part of that area, 
+their distribution will be very clumped. 
+
+```{r cv, eval=TRUE, echo=FALSE, results='hide', fig.cap="Coefficient of variation (CV) of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent). The y-axis is presented in log10 scale."}
+cv_plot <- landscapes_dist %>% 
+  # dplyr::filter(spatial_dist == "A: regular") %>% 
+  ggplot(aes(zoi_ext)) +
+  geom_vline(data = dat_isol, aes(xintercept = min_dist/ext/2), linetype = 2) +
+  geom_vline(data = dat_isol, aes(xintercept = size_cluster/ext*1.96), linetype = 2, color = "darkgrey") +
+  geom_point(aes(y = sd_nearest/mn_nearest, col = "Nearest")) +
+  geom_line(aes(y = sd_nearest/mn_nearest, col = "Nearest")) +
+  geom_point(aes(y = sd_cuminf/mn_cuminf, col = "Cumulative")) +
+  geom_line(aes(y = sd_cuminf/mn_cuminf, col = "Cumulative")) +
+  facet_wrap(~spatial_dist) +
+  labs(x = "Zone of Influence radius", 
+       y = "Coefficient of variation of the ZoI",
+       color = "Type of influence",
+       linetype = "Mean n.n. distance") +
+  theme_bw() +
+  scale_y_log10() +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(#axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.grid.minor = element_blank(), panel.grid.major = element_blank())
+cv_plot
+```
+
+```{r correlations10, eval=FALSE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent)."}
+# plot
+dat_isol_10 <- landscapes_dist_10 %>% 
+  dplyr::group_by(n_features, spatial_dist) %>% 
+  dplyr::summarise(mean_iso = unique(mean_isolation),
+                   mean_dist = unique(mean_dist),
+                   mean_nndist = unique(mean_nndist)) %>% 
+  dplyr::mutate(min_dist = map_dbl(pts_coords_10, function(x) min(dist(x))),
+                max_dist = map_dbl(pts_coords_10, function(x) max(dist(x))),
+                min_nndist = map_dbl(pts_coords_10, function(x) min(spatstat.geom::nndist(x))),
+                iso = map_dbl(pts_coords_10, mean_isolation, n_rand = 150, ext = c(0, ext)),
+                size_cluster = c(NA, NA, wd[1], wd[1], wd[2], wd[2]))
+
+landscapes_plot_10 <- landscapes_dist_10 %>% 
+  # dplyr::filter(spatial_dist == "A: regular") %>% 
+  ggplot(aes(zoi_ext, abs(corr))) +
+  geom_vline(data = dat_isol_10, aes(xintercept = min_dist/ext/2), linetype = 2) +
+  geom_vline(data = dat_isol_10, aes(xintercept = size_cluster/ext*1.96), linetype = 2, color = "darkgrey") +
+  geom_point() +
+  geom_line() +
+  ylim(0, 1) +
+  facet_wrap(~spatial_dist, scales = "free_y") +
+  labs(x = "Zone of Influence radius", 
+       y = "Correlation",
+       color = "Spatial distribution",
+       linetype = "Mean n.n. distance") +
+  theme_bw() +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(#axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        ) #+
+  #scale_x_continuous(trans='log10')
+
+# save
+ggsave("../text/extra_figs/extra/correlations_10_no_title.png", 
+       plot = landscapes_plot_10 + theme(strip.text.x = element_blank()),
+       width = 15, height = 10, units = "cm", dpi = 300)
+
+# plot  
+landscapes_plot_10
+```
+
+# Zone of influence metrics in a real landscape
+
+## Context: the Hardangervidda wild reindeer area
+
+We also provide a real-world example to illustrate the similarities of 
+$\phi_{nearest}$ and $\phi_{cumulative}$. We use the Hardangervidda wild reindeer 
+area in Southern Norway (Fig. 5 in the main text, Fig. C1), 
+the region used for the habitat selection analyses presented in the main text. 
+For more details, see the Appendix C. Similar to what was done above with the 
+simulated landscapes, we calculated both $\phi_{nearest}$ and $\phi_{cumulative}$ 
+for private cottages and large tourist cabins for ZoI varying from 100 m to 20 km, 
+which corresponds to ~0.1 to 20% of the landscape extent (given the dimensions of 
+the Hardangervidda reindeer area are at the order of 100 km).
+We calculated $\phi_{nearest}$ and $\phi_{cumulative}$ using multiple possible 
+influence functions: linear decay, exponential decay, Gaussian decay, and threshold 
+(see Appendix A). For each of them we calculated the pixel-to-pixel correlation and the
+CV, which are shown in Figs. B7 and B8.
+
+```{r read_influence_maps_reindeer_GRASS, eval=FALSE, echo=FALSE, results='hide', fig.show='hide'}
+### Retrieve maps from GRASS for prediction
+
+# connect to GRASS
+ms <- "u_bb_cuminf"
+NinaR::grassConnect(mapset = ms)
+
+# variables names in GRASS GIS
+layers <- rgrass7::execGRASS("g.list", type = "raster", pattern = "*inf*", mapset = ms) %>%
+  attr("resOut")
+
+# region
+rgrass7::execGRASS("g.region", vector = "study_area", align = layers[1], flags = "p")
+# mask
+rgrass7::execGRASS("r.mask", vector = "study_area", flags = "overwrite")
+
+# find the layers of interest
+priv_cab_cum_g <- util_find_layer_GRASS(list("private_cabins", "cumulative"),
+                                        layers_grass = layers)
+priv_cab_near_g <- util_find_layer_GRASS(list("private_cabins", "nearest"),
+                                         layers_grass = layers) %>% 
+  .[grep("euclidean|log", ., invert = TRUE)]
+
+pub_cab_cum_g <- util_find_layer_GRASS(list("public_cabins_high", "cumulative"),
+                                       layers_grass = layers)
+pub_cab_near_g <- util_find_layer_GRASS(list("public_cabins_high", "nearest"),
+                                        layers_grass = layers) %>% 
+  .[grep("euclidean|log", ., invert = TRUE)]
+
+# read the layers
+priv_cab_cum <- rgrass7::read_RAST(priv_cab_cum_g, return_format = "terra")
+priv_cab_near <- rgrass7::read_RAST(priv_cab_near_g, return_format = "terra")
+
+pub_cab_cum <- rgrass7::read_RAST(pub_cab_cum_g, return_format = "terra")
+pub_cab_near <- rgrass7::read_RAST(pub_cab_near_g, return_format = "terra")
+
+# test
+plot(pub_cab_cum[[7]])
+plot(priv_cab_near[[7]])
+
+# save maps
+terra::writeRaster(priv_cab_cum, filename = "../data/test/maps_reindeer_private_cabins_cumulative.tif",
+                   overwrite = TRUE)
+terra::writeRaster(priv_cab_near, filename = "../data/test/maps_reindeer_private_cabins_nearest.tif",
+                   overwrite = TRUE)
+terra::writeRaster(pub_cab_cum, filename = "../data/test/maps_reindeer_public_cabins_cumulative.tif",
+                   overwrite = TRUE)
+terra::writeRaster(pub_cab_near, filename = "../data/test/maps_reindeer_public_cabins_nearest.tif",
+                   overwrite = TRUE)
+```
+
+```{r calc_corr_reindeer, eval=FALSE, echo=FALSE, results='hide', fig.show='hide'}
+# save maps
+priv_cab_cum <- terra::rast("../data/test/maps_reindeer_private_cabins_cumulative.tif")
+priv_cab_near <- terra::rast("../data/test/maps_reindeer_private_cabins_nearest.tif")
+pub_cab_cum <- terra::rast("../data/test/maps_reindeer_public_cabins_cumulative.tif")
+pub_cab_near <- terra::rast("../data/test/maps_reindeer_public_cabins_nearest.tif")
+
+priv_cab_cum_g <- names(priv_cab_cum)
+priv_cab_near_g <- names(priv_cab_near)
+pub_cab_cum_g <- names(pub_cab_cum)
+pub_cab_near_g <- names(pub_cab_near)
+
+# create tibble with map names, parameters, and maps
+source("92_find_parms_cumulative.R")
+
+df_reindeer <- dplyr::bind_rows(
+  tibble::tibble(
+    covariate = "Private cottages",
+    name_cum = priv_cab_cum_g,
+    name_near = priv_cab_near_g,
+    var = find_parms_cumulative(priv_cab_cum_g)$vars,
+    shape = find_parms_cumulative(priv_cab_cum_g)$func,
+    zoi = find_parms_cumulative(priv_cab_cum_g)$zoi,
+    corr = purrr::map2_dbl(as.list(priv_cab_cum), as.list(priv_cab_near), function(x,y)
+                           cor(terra::values(x), terra::values(y), use = "complete.obs")),
+    sd_cum = purrr::map_dbl(as.list(priv_cab_cum), ~ terra::global(.x, "sd", na.rm = T)$sd),
+    sd_near = purrr::map_dbl(as.list(priv_cab_near), ~ terra::global(.x, "sd", na.rm = T)$sd),
+    mn_cum = purrr::map_dbl(as.list(priv_cab_cum), ~ terra::global(.x, "mean", na.rm = T)$mean),
+    mn_near = purrr::map_dbl(as.list(priv_cab_near), ~ terra::global(.x, "mean", na.rm = T)$mean),
+  ),
+  tibble::tibble(
+    covariate = "Tourist cabins",
+    name_cum = pub_cab_cum_g,
+    name_near = pub_cab_near_g,
+    var = find_parms_cumulative(pub_cab_cum_g)$vars,
+    shape = find_parms_cumulative(pub_cab_cum_g)$func,
+    zoi = find_parms_cumulative(pub_cab_cum_g)$zoi,
+    corr = purrr::map2_dbl(as.list(pub_cab_cum), as.list(pub_cab_near), function(x,y)
+                           cor(terra::values(x), terra::values(y), use = "complete.obs")),
+    sd_cum = purrr::map_dbl(as.list(pub_cab_cum), ~ terra::global(.x, "sd", na.rm = T)$sd),
+    sd_near = purrr::map_dbl(as.list(pub_cab_near), ~ terra::global(.x, "sd", na.rm = T)$sd),
+    mn_cum = purrr::map_dbl(as.list(pub_cab_cum), ~ terra::global(.x, "mean", na.rm = T)$mean),
+    mn_near = purrr::map_dbl(as.list(pub_cab_near), ~ terra::global(.x, "mean", na.rm = T)$mean),
+  )) %>% 
+  dplyr::arrange(var, shape, zoi) %>% 
+  dplyr::filter(zoi != 30000)
+df_reindeer$shape <- factor(df_reindeer$shape, levels = unique(df_reindeer$shape),
+                            labels = c("Linear decay", "Exponential decay", "Gaussian decay", "Threshold"))
+df_reindeer
+
+# range of maps
+range_maps <- terra::ext(priv_cab_cum) %>% as.vector() %>% diff %>% .[c(1,3)]
+
+20000/range_maps
+
+# save table
+save(df_reindeer, file = "../data/test/df_reindeer_correlation_influence.rda")
+```
+
+```{r plot_corr_reindeer, eval=TRUE, echo=FALSE, results='hide', fig.show='hide'}
+# load df with correlations
+load("../data/test/df_reindeer_correlation_influence.rda")
+df_reindeer
+
+# calculate minimum distance between points
+# read vector files
+vects <- list.files("../data/analysis_GPS/", pattern = "_v.shp|_v.gpkg", 
+                    full.names = TRUE)
+
+# load infrastructure layers
+infra_vars <- paste(c("private_cab", "pub_cabins_summer_high"), collapse = "|")
+infra <- grep(infra_vars, vects, value = TRUE) %>% 
+  purrr::map(.f = sf::st_read)
+dat_isol_reindeer <- tibble::tibble(
+  covariate = c("Private cottages", "Tourist cabins"),
+  min_dist = purrr::map_dbl(infra, ~ min(dist(st_coordinates(.x)))),
+  mean_dist = purrr::map_dbl(infra, ~ mean(dist(st_coordinates(.x)))),
+  min_nndist = map_dbl(infra, ~ min(spatstat.geom::nndist(st_coordinates(.x)))),
+  mean_nndist = map_dbl(infra, ~ mean(spatstat.geom::nndist(st_coordinates(.x)))),
+  iso = map_dbl(infra, ~ mean_isolation(.x, ext = terra::ext(.x), n_rand = 1000))
+)
+
+# private cottages
+corr_plot_reindeer_priv <- df_reindeer %>% 
+  dplyr::filter(covariate == "Private cottages") %>% 
+  ggplot(aes(zoi, corr)) +
+  geom_vline(data = dat_isol_reindeer[1,], aes(xintercept = min_dist), linetype = 2) +
+  geom_point() +
+  geom_line() +
+  ylim(0, 1) +
+  facet_wrap(~shape, scales = "free_y") +
+  labs(x = "Zone of Influence radius", 
+       y = "Correlation between ZoI metrics") +
+  theme_bw() #+
+  # scale_x_log10()
+corr_plot_reindeer_priv
+
+cv_plot_reindeer_priv <- df_reindeer %>% 
+  dplyr::filter(covariate == "Private cottages") %>% 
+  ggplot(aes(zoi)) +
+  geom_vline(data = dat_isol_reindeer[1,], aes(xintercept = min_dist), linetype = 2) +
+  geom_point(aes(y = sd_near/mn_near, col = "Nearest")) +
+  geom_line(aes(y = sd_near/mn_near, col = "Nearest")) +
+  geom_point(aes(y = sd_cum/mn_cum, col = "Cumulative")) +
+  geom_line(aes(y = sd_cum/mn_cum, col = "Cumulative")) +
+  # ylim(0, 1) +
+  facet_wrap(~shape) +
+  labs(x = "Zone of Influence radius", 
+       y = "CV of the ZoI",
+       color = "Type of influence") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+cv_plot_reindeer_priv
+
+# public cabins
+corr_plot_reindeer_pub <- df_reindeer %>% 
+  dplyr::filter(covariate == "Tourist cabins", zoi > 100) %>% 
+  ggplot(aes(zoi, corr)) +
+  geom_vline(data = dat_isol_reindeer[2,], aes(xintercept = min_dist), linetype = 2) +
+  geom_point() +
+  geom_line() +
+  ylim(0, 1) +
+  facet_wrap(~shape, scales = "free_y") +
+  labs(x = "Zone of Influence radius", 
+       y = "Correlation between ZoI metrics") +
+  theme_bw() #+
+  # scale_x_log10()
+corr_plot_reindeer_pub
+
+cv_plot_reindeer_pub <- df_reindeer %>% 
+  dplyr::filter(covariate == "Tourist cabins") %>% 
+  ggplot(aes(zoi)) +
+  geom_vline(data = dat_isol_reindeer[2,], aes(xintercept = min_dist), linetype = 2) +
+  geom_point(aes(y = sd_near/mn_near, col = "Nearest")) +
+  geom_line(aes(y = sd_near/mn_near, col = "Nearest")) +
+  geom_point(aes(y = sd_cum/mn_cum, col = "Cumulative")) +
+  geom_line(aes(y = sd_cum/mn_cum, col = "Cumulative")) +
+  # ylim(0, 1) +
+  facet_wrap(~shape) +
+  labs(x = "Zone of Influence radius", 
+       y = "CV of the ZoI",
+       color = "Type of influence") +
+  scale_y_log10() +
+  theme_bw() +
+  theme(legend.position = "bottom")
+cv_plot_reindeer_pub
+```
+
+## Correlation and variation in the ZoI metrics
+
+The pattern of correlations among influence measures for private cottages follow the same
+pattern predicted for clustered spatial points (Fig. B5), what is reasonable given their 
+high density and aggregated spatial distribution 
+(see Fig. C2 in Appendix C and Fig. 5 in the main text).
+Since the minimum distance between private cottages is very small, even for the smallest 
+values of ZoI radius $\phi_{nearest}$ and $\phi_{cumulative}$ are already different, 
+and for all ZoI functions their correlation
+decreases with ZoI radius until $r \sim 5000$ m (Fig. B7A), apart from the threshold 
+function (for which there is no variation in $\phi_{nearest}$ for $r > 5000$ m, since 
+all the function values are 1; see Appendix C).
+We did not calculate measures of or tested for clustering for these datasets, but 
+the ZoI radius for which the correlation stops decreasing for private cottages 
+is related to the cluster size -- on relative terms, the distance between private 
+cabins features is small (Table C1). 
+In contrast, for public cabins the correlation among the ZoI metrics does not 
+stop decreasing with the ZoI radius (Fig. B8A), which is also the pattern expected from 
+the predictions from our simulated landscapes for random and sparse distributions 
+of features (see the relative distance to the nearest tourist cabin in Table C1). 
+Here it would be necessary to go much beyond $r = 20$ km to detect some clustering 
+in the spatial distribution of tourist cabins, a scale in which the two $\phi$ 
+could stop diverging. 
+
+Looking at the variation in both ZoI metrics for each infrastructure type,
+we see for private cottages -- dense and aggregated -- $\phi_{cumulative}$ is more 
+variable than $\phi_{nearest}$ for most $r$, what explains their divergence, 
+and their correlation stops decreasing when the CV for $\phi_{nearest}$ gets 
+next to zero (Fig. B7B). For tourist resorts -- sparse and spread in space -- 
+the CV of both influence measures is similar for small $r$, and increases with 
+$r$ (Fig. B8B). 
+
+```{r plot_corr_priv, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for private cottages in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features. The correlation between measures is not shown for the threshold function with $r \\geq 2500 m$, for which the CV of $\\phi_{nearest}$ is null."}
+ggpubr::ggarrange(corr_plot_reindeer_priv, cv_plot_reindeer_priv, align = "v", nrow = 2, labels = "AUTO")
+```
+
+
+```{r plot_corr_pub, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for tourist cabins in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features."}
+ggpubr::ggarrange(corr_plot_reindeer_pub, cv_plot_reindeer_pub, align = "v", nrow = 2, labels = "AUTO")
+```
+
+# Additional remarks
+
+Here we showed that the two ZoI metrics of influence -- $\phi_{nearest}$ and 
+$\phi_{cumulative}$ -- are more correlated either when the spatial distribution 
+of features is sparse and the ZoI radius is small
+(when the minimum distance between features is larger than the $2r$) 
+or when features are clustered and ZoI is large
+($r$ is larger than the size of clusters of features). 
+When the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ is high  
+it might be difficult to 
+distinguish whether the impacts of a given infrastructure type accumulate or not. 
+However, whether a given biological response variable is affected by only the nearest feature 
+or the cumulative ZoI of multiple features (or none) remain an empirical problem 
+to be explored in real landscapes.
+
+The results presented here  
+assume infrastructure represented as points, chosen here because of the simplicity 
+to represent them and place them following different patterns. Yet, these cases 
+also provide insights on when $\phi_{nearest}$ and $\phi_{cumulative}$ are similar for other 
+types of infrastructure, for instance linear infrastructure 
+(e.g. roads, railways, and power lines) and higher dimensional landscape changes 
+defined by polygons and areas (e.g. dams, mining or forestry areas, and deforestation sites). 
+However, we recognize that those patterns can get more complex as these structures 
+and spatial patterns extend over large distances and areas, and a further assessment 
+of when these ZoI metrics converge might be needed.
