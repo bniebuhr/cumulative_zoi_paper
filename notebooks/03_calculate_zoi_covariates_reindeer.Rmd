@@ -1,14 +1,14 @@
 ---
 title: "Appendix 4"
-subtitle: "Cumulative influence of infrastructure on reindeer space use: calculating influence measures"
+subtitle: "Cumulative impacts of infrastructure on reindeer space use: calculating the ZoI metrics"
 author: "Bernardo Niebuhr, Bram van Moorter, Manuela Panzacchi"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 geometry: margin=2cm
 abstract: | 
   In this document, we prepare covariates and wild reindeer movement data for habitat selection 
-  analysis presented in Niebuhr et al. *Estimating the cumulative impacts and the zone of influence 
-  from multiple anthropogenic infrastructure on biodiversity.* The main goal of this document is to show
-  how to calculate the cumulative influence and the influence from the nearest feature for several
+  analysis presented in Niebuhr et al. *Estimating the cumulative impact and zone of influence 
+  of anthropogenic infrastructure on biodiversity.* The main goal of this document is to show
+  how to calculate the cumulative ZoI and the ZoI from the nearest feature for several
   infrastructure variables using the R-GRASS interface and the `oneimpact` package.
 output:
   NinaR::jensAnalysis:
@@ -46,11 +46,12 @@ palette(ninaPalette())
 
 \newpage
 
-
-In this document we prepare covariates and wild reindeer movement data for the Hardangervidda area for habitat
-selection analysis. The reindeer GPS dataset is organized in a setup of use-availability, where used locations (column 
-`use = 1`) are compared to locations available but not used by the animals (column `use = 0`). 
-We annotate the GPS dataset with the following covariates:
+In this document we prepare covariates and wild reindeer movement data for the 
+Hardangervidda area for habitat selection analysis. The reindeer GPS dataset is 
+organized in a setup of use-availability, where used locations (column 
+`use = 1`) are compared to locations available but not used by the animals 
+(column `use = 0`). We annotate the GPS dataset with the ZoI metrics for the 
+following covariates:
 
 - Private cottages
 - Large tourist cabins
@@ -58,12 +59,16 @@ We annotate the GPS dataset with the following covariates:
 - Roads of high traffic
 - Roads of low traffic
 - Trails
+
+We also annotate the GPS data with:
+
 - Land cover
 - 4 PCAs corresponding to bio-climatic-geographical variation in Norway
 
-For the infrastructure covariates, we calculate the cumulative influence and the influence of the nearest feature 
-considering different influence functions (threshold, linear decay, Gaussian decay, and exponential decay) and
-different zones of influence, from 100 m to 20 km.
+For the infrastructure covariates, we calculate the cumulative ZoI and the ZoI 
+of the nearest feature considering different ZoI functions (threshold, linear decay, 
+Gaussian decay, and exponential decay) and different radii for the zone of influence, 
+from 100 m to 20 km.
 
 Below we present the steps for this data preparation.
 
@@ -71,8 +76,8 @@ Below we present the steps for this data preparation.
 
 # Load packages
 
-We start loading the packages necessary for the analysis. Spatial analyses are done through GRASS GIS using
-the `oneimpact` package.
+We start loading the packages necessary for the analysis. Spatial analyses are done 
+through GRASS GIS using the `oneimpact` package.
 
 ```{r load_packages, eval=FALSE, message=FALSE, warning=FALSE}
 #Load packages
@@ -96,8 +101,9 @@ library(oneimpact)
 
 # Connect to GRASS
 
-We start by connecting the R session to GRASS GIS. We link it to the GRASS GIS database from the Norwegian
-Institute for Nature Research (NINA), where the spatial data is already organized.
+We start by connecting the R session to GRASS GIS. We link it to the GRASS GIS 
+database from the Norwegian Institute for Nature Research (NINA), where the spatial 
+data is already organized.
 
 ```{r connect_grass, echo=TRUE, eval=FALSE}
 # Connect to GRASS GIS location and mapset
@@ -110,12 +116,12 @@ flags <- c("quiet", "overwrite")
 
 \newpage
 
-
 # Set the study area
 
-Here we subset the vector with the limits of the study area, the Hardangervidda wild reindeer
-area, and make a 50 km buffer around it, for preparing the spatial data considering also the surrounding
-of the study area and avoid edge effects in the spatial data preparation.
+Here we subset the vector with the limits of the study area, the Hardangervidda 
+wild reindeer area, and make a 50 km buffer around it, for preparing the spatial 
+data considering also the surrounding of the study area and to avoid edge effects 
+in the spatial data preparation.
 
 ```{r load_vectors, echo=TRUE, eval=FALSE}
 # load study area
@@ -137,14 +143,14 @@ study_area_buff50 <- study_area %>%
 
 # put study area and buffer into the GRASS GIS mapset
 study_area_g <- "study_area"
-rgrass7::writeVECT(study_area, study_area_g,
-                   v.in.ogr_flags = flags)
+rgrass7::write_VECT(study_area, study_area_g,
+                    v.in.ogr_flags = flags)
 study_area_buff_g <- "study_area_buff50"
-rgrass7::writeVECT(study_area_buff50, study_area_buff_g,
-                   v.in.ogr_flags = flags)
+rgrass7::write_VECT(study_area_buff50, study_area_buff_g,
+                    v.in.ogr_flags = flags)
 ```
 
-Just a plot of the study area.
+Here is just a plot of the study area, for illustration.
 
 ```{r viz1, echo=TRUE, eval=FALSE}
 tm_shape(study_area_buff50) +
@@ -153,23 +159,24 @@ tm_shape(study_area_buff50) +
   tm_borders() +
   tm_scale_bar(breaks = c(15, 30, 45, 60))
 ```
+
 \newpage
 
 # Rasterize infrastructure vectors
 
-Now we rasterize the vector layers corresponding to the infrastructure variables we'll
-consider for this area. We use a previously created raster file with 100 m resolution as
+Now we rasterized the vector layers corresponding to the infrastructure variables we
+considered for this area. We used a previously created raster file with 100 m resolution as
 a base grid for rasterizing the infrastructure layers.
 
-For the private cottage and tourist cabins, we create rasters with value 1 where there
+For the private cottage and tourist cabins, we first created rasters with value 1 where there
 are infrastructure and NA where they are absent, to be used as input for the calculation
-of the influence of the nearest feature. Here it is not relevant to count the number of features,
+of the ZoI of the nearest feature. Here it is not necessary to count the number of features,
 only to know if they are present or not in a given pixel, since this measure takes into
-account of the influence of the nearest feature.
+account of the ZoI of the nearest feature.
 
-We also create rasters counting the number of cottages in each pixel, which are used as 
-input for the calculation of the cumulative influence. This procedure is made with the 
-`util_v2rast_count_GRASS` function of the `oneimpact` package.
+We also created rasters counting the number of cottages and cabins in each pixel, 
+which were used as input for the calculation of the cumulative ZoI. This procedure was
+made with the `util_v2rast_count_grass` function of the `oneimpact` package.
 
 ```{r rasterize_maps_count, echo=TRUE, eval=FALSE}
 # set region as the study area buffer
@@ -190,7 +197,7 @@ outputs_rasterize_c1 <- c("private_cabins",
 use_rasterize_c1 <- "val"
 
 #---
-# First rasterize using val=1 to use as input for calc_influence_nearest
+# First rasterize using val=1 to use as input for calc_zoi_nearest
 
 # put all in a tibble
 rasterize_parms_c1 <- tibble::tibble(input = vectors_to_rasterize_c,
@@ -209,7 +216,7 @@ colored <- purrr::map(outputs_rasterize_c1, function(x)
   rgrass7::execGRASS(cmd = "r.colors", map = x, rules = f, flags = ))
 
 #---
-# Then rasterize using count to use as input for calc_influence_cumulative
+# Then rasterize using count to use as input for calc_zoi_cumulative
 
 # output raster map names
 outputs_rasterize_c2 <- c("private_cabins_count",
@@ -222,17 +229,17 @@ count_parms <- tibble::tibble(x = vectors_to_rasterize_c,
                               set_region = FALSE)
 
 # rasterize with count
-count <- count_parms %>% purrr::pmap(oneimpact::util_v2rast_count_GRASS,
+count <- count_parms %>% purrr::pmap(oneimpact::util_v2rast_count_grass,
                                      quiet = F, overwrite = TRUE)
 
 ```
 
 For the roads and trails, however, for 100m pixels there can hardly be more than one 
 feature in each pixel, and if this occurs it is not relevant for the analysis. Therefore, 
-a rasterization counting the number of features is not made. Instead, besides the common
-rasterization used to create the inputs for the calculation of the influence of
+a rasterization counting the number of features was not made. Instead, besides the common
+rasterization used to create the inputs for the calculation of the ZoI of
 the nearest feature, we create binary raster maps (1 where there are infrastructure, 0 
-elsewhere) to be used as input for the cumulative influence calculation.
+elsewhere) to be used as input for the cumulative ZoI calculation.
 
 ```{r rasterize_maps_value1, echo=TRUE, eval=FALSE}
 # set region as the study area buffer
@@ -275,7 +282,7 @@ binarize_parms_1 <- tibble::tibble(x = outputs_rasterize_1,
                                    output = output_bin_1,
                                    null = 0)
 
-binarized_1 <- binarize_parms_1 %>% purrr::pmap(oneimpact::util_binarize_GRASS,
+binarized_1 <- binarize_parms_1 %>% purrr::pmap(oneimpact::util_binarize_grass,
                                                 quiet = TRUE, overwrite = TRUE)
 binarized_1 <- unlist(binarized_1)
 ```
@@ -310,57 +317,56 @@ for(i in 2:length(out_names)) {
 
 \newpage
 
+# Calculate the zone of influence of the nearest feature
 
-# Calculate the influence of the nearest feature
-
-Here we calculate, for each infrastructure type, the influence of the nearest feature,
-for different influence functions and zones of influence. To do so, we use the function
-`calc_influence_nearest` from the `oneimpact` package. We also calculate the log-distance
+Here we calculated, for each infrastructure type, the ZoI of the nearest feature,
+for different ZoI decay functions and ZoI radii. To do so, we used the function
+`calc_zoi_nearest` from the `oneimpact` package. We also calculated the log-distance
 from the nearest feature, which is commonly used in ecological studies, to compare its
-performance in model fitting with the other influence variables.
+performance in model fitting with the other ZoI variables.
 
 ```{r calculate_nearest, echo=TRUE, eval=FALSE}
-# calculate influence from the nearest feature
+# calculate ZoI from the nearest feature
 zoi_vals <- c(100, 250, 500, 1000, 2500, 5000, 10000, 20000)
 shapes <- c("threshold", "bartlett", "exp_decay", "Gauss")
 
 # define parameters
-nearinf_parms <- expand.grid(zoi = zoi_vals, type = shapes)
+nearzoi_parms <- expand.grid(zoi = zoi_vals, type = shapes)
 
-# calculate influence from the nearest feature
+# calculate ZoI from the nearest feature
 
 # private cabins
-nearinf_private_cabins <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_private_cabins <- nearzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                         x = "private_cabins",
                                                         where = "GRASS",
                                                         quiet = TRUE, overwrite = TRUE)
 
 # public cabins high
-nearinf_public_cabins_high <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_public_cabins_high <- nearzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                             x = "public_cabins_high",
                                                             where = "GRASS",
                                                             quiet = TRUE, overwrite = TRUE)
 
 # public cabins low
-nearinf_public_cabins_low <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_public_cabins_low <- nearzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                            x = "public_cabins_low",
                                                            where = "GRASS",
                                                            quiet = TRUE, overwrite = TRUE)
 
 # roads high
-nearinf_roads_high <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_roads_high <- nearzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                     x = "roads_high",
                                                     where = "GRASS",
                                                     quiet = TRUE, overwrite = TRUE)
 
 # roads low
-nearinf_roads_low <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_roads_low <- nearzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                    x = "roads_low",
                                                    where = "GRASS",
                                                    quiet = TRUE, overwrite = TRUE)
 
 # summer trails
-nearinf_trails <- nearinf_parms %>% purrr::pmap(oneimpact::calc_influence_nearest,
+nearzoi_trails <- nearinf_parms %>% purrr::pmap(oneimpact::calc_zoi_nearest,
                                                 x = "trails",
                                                 where = "GRASS",
                                                 quiet = TRUE, overwrite = TRUE)
@@ -370,7 +376,7 @@ infrastructure <- c("private_cabins", "public_cabins_high", "public_cabins_low",
                     "roads_high", "roads_low", "trails")
 
 # calculate log-distance from the nearest feature for all infrastructure
-nearinf_log <- purrr::map(infrastructure, oneimpact::calc_influence_nearest,
+nearzoi_log <- purrr::map(infrastructure, oneimpact::calc_zoi_nearest,
                           type = "log", where = "GRASS",
                           quiet = TRUE, overwrite = TRUE)
 ```
@@ -386,19 +392,19 @@ rgrass7::execGRASS("g.region", vector = study_area_buff_g,
                    flags = "p")
 
 # calculate Euclidean distance
-nearinf_euc <- purrr::map(infrastructure, oneimpact::calc_influence_nearest,
+nearzoi_euc <- purrr::map(infrastructure, oneimpact::calc_zoi_nearest,
                           type = "euclidean", where = "GRASS",
                           quiet = TRUE, overwrite = TRUE)
-nearinf_euc <- unlist(nearinf_euc)
+nearzoi_euc <- unlist(nearzoi_euc)
 
 # cut and retrieve maps for the study area
 layers_in_r <- list()
-for(i in 1:length(nearinf_euc)) {
+for(i in 1:length(nearzoi_euc)) {
   # retrieve to R
-  layers_in_r[[i]] <- rgrass7::read_RAST(nearinf_euc[i], return_format = "terra")
+  layers_in_r[[i]] <- rgrass7::read_RAST(nearzoi_euc[i], return_format = "terra")
   #export from R
   terra::writeRaster(layers_in_r[[i]], 
-                     filename = paste0("../data/analysis_GPS/", nearinf_euc[i], ".tif"), 
+                     filename = paste0("../data/analysis_GPS/", nearzoi_euc[i], ".tif"), 
                      overwrite = TRUE)
   # export from GRASS
   # rgrass7::execGRASS("v.out.ogr", input = vect_export_within[i], 
@@ -410,57 +416,56 @@ plot(do.call("c", layers_in_r))
 
 \newpage
 
+# Calculate the cumulative ZoI of multiple features
 
-# Calculate the cumulative influence
-
-Here we calculate, for each infrastructure type, the cumulative influence of multiple features,
-for different influence functions and zones of influence. To do so, we use the function
-`calc_influence_cumulative` from the `oneimpact` package.
+Here we calculated, for each infrastructure type, the cumulative ZoI of multiple features,
+for different ZoI functions and radii. To do so, we used the function
+`calc_zoi_cumulative` from the `oneimpact` package.
 
 ```{r calculate_cumulative, echo=TRUE, eval=FALSE}
-# calculate cumulative influence
+# calculate cumulative ZoI
 
 # input maps, ZoI values, and filter shapes
 zoi_vals <- c(100, 250, 500, 1000, 2500, 5000, 10000, 20000)
 shapes <- c("threshold", "bartlett", "exp_decay", "Gauss")
 
 # define parameters
-cuminf_parms <- expand.grid(zoi = zoi_vals, type = shapes)
+cumzoi_parms <- expand.grid(zoi = zoi_vals, type = shapes)
 
-# calculate cumulative influence
+# calculate cumulative zoiluence
 
 # private cabins
-cuminf_private_cabins <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_private_cabins <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                                       x = "private_cabins_count",
                                                       where = "GRASS",
                                                       quiet = TRUE, overwrite = TRUE)
 
 # public cabins high
-cuminf_public_cabins_high <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_public_cabins_high <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                                           x = "public_cabins_high_count",
                                                           where = "GRASS",
                                                           quiet = TRUE, overwrite = TRUE)
 
 # public cabins low
-cuminf_public_cabins_low <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_public_cabins_low <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                                          x = "public_cabins_low_count",
                                                          where = "GRASS",
                                                          quiet = TRUE, overwrite = TRUE)
 
 # roads high
-cuminf_roads_high <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_roads_high <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                                   x = "roads_high_bin",
                                                   where = "GRASS",
                                                   quiet = TRUE, overwrite = TRUE)
 
 # roads low
-cuminf_roads_low <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_roads_low <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                                  x = "roads_low_bin",
                                                  where = "GRASS",
                                                  quiet = TRUE, overwrite = TRUE)
 
 # summer trails
-cuminf_trails <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulative,
+cumzoi_trails <- cumzoi_parms %>% purrr::pmap(oneimpact::calc_zoi_cumulative,
                                               x = "trails_bin",
                                               where = "GRASS",
                                               quiet = TRUE, overwrite = TRUE)
@@ -469,11 +474,10 @@ cuminf_trails <- cuminf_parms %>% purrr::pmap(oneimpact::calc_influence_cumulati
 
 \newpage
 
+# Prepare and annotate GPS data
 
-# Prepare and annotating GPS data
-
-Finally, we load the reindeer GPS data, prepare it fr analysis, and annotate it with
-the infrastructure data to allow assessing their effects on reindeer space use.
+Finally, we loaded the reindeer GPS data, prepared it for analysis, and annotated 
+it with the infrastructure data to allow assessing their effects on reindeer space use.
 
 The reindeer data was already organized in a use-availability design, where used locations (column 
 `use = 1`) are compared to locations available but not used by the animals (column `use = 0`). It 
@@ -511,8 +515,8 @@ dat <- dat %>%
 names(dat)
 ```
 
-Finally, we annotate the GPS dataset with the influence measures calculated in this 
-document and save it externally for the statistical analysis.
+Finally, we annotated the GPS dataset with the influence measures calculated in this 
+document and saved it externally for the statistical analysis.
 
 ```{r annotate_gps, echo=TRUE, eval=FALSE}
 # variables
@@ -579,7 +583,7 @@ filename <- "cuminf_zoi_GPS_dataset_annotated.rda"
 save(dat, file = paste0("../data/analysis_GPS/", filename))
 ```
 
-Finally, we visualize the data within the study area.
+Finally, we visualized the data within the study area.
 
 ```{r viz2, echo=TRUE, eval=FALSE}
 dat_vect <- dat %>%
