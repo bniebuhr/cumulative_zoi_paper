@@ -506,8 +506,6 @@ persp(x,y,z, theta=-25, phi=30, r=2, shade=0.4, axes=TRUE,scale=TRUE, box=F,
 con_params <- list()
 con_params$usr = "myusername"
 con_params$pwd = "mypassword"
-con_params$usr = "bram.van.moorter"
-con_params$pwd = "bram"
 
 library(RPostgreSQL)
 drv <- dbDriver("PostgreSQL") # driver
