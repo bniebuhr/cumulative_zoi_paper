@@ -1,0 +1,214 @@
+---
+title: "Appendix C"
+subtitle: "Applying the cumulative zone of influence approach to ecological studies"
+author: ""
+date: ""
+geometry: margin=2cm
+abstract: | 
+  In this document, we provide examples of potential applications of the cumulative zone of
+  influence approach in ecological studies with different contexts, biological measurements, and
+  studied taxa. This is a supplementary information for Niebuhr et al. *Estimating the cumulative 
+  impact and zone of influence of anthropogenic infrastructure on biodiversity*. Methods in Ecology
+  and Evolution.
+output:
+  NinaR::jensAnalysis:
+  highlight: tango
+  fig_caption: yes
+  toc: yes
+header-includes:
+  \usepackage{float}
+  \usepackage{caption}
+  \DeclareCaptionLabelFormat{Sformat}{#1 C#2}
+  \captionsetup[figure]{labelformat=Sformat}
+  \captionsetup[table]{labelformat=empty}
+---
+
+```{r setup, include=FALSE}
+# This is optional
+# I choose the 'styler' package for tidying the code to preserve indentations
+# I set the cutoff for code tidying to 60, but this doesn't currently work with styler.
+# Set tidy = True to get the knitr default
+# I want all figures as png and pdf in high quality in a subfolder called figure
+library(NinaR)
+library(kableExtra)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  tidy = "styler",
+  dev = c("png", "pdf"),
+  dpi = 600,
+  fig.path = "figure/",
+  fig.align="center",
+  fig.pos = 'H',
+  fig.width = 5,
+  fig.asp = 0.7,
+  message=FALSE,
+  warning=FALSE,
+  options(scipen=999)
+)
+
+options(
+  xtable.comment = F,
+  xtable.include.rownames = F,
+  nina.logo.y.pos = 0.15
+)
+palette(ninaPalette())
+
+# captions
+library(captioner)
+caption <- captioner("Table C", FALSE)
+
+library(tibble)
+```
+
+# Introduction
+
+In the main text, we present an application of the cumulative Zone of Influence (ZoI) 
+approach on habitat selection, using reindeer as a model study. As mentioned there, 
+the approach might be applied way beyond animal movement ecology studies.
+In principle, the approach is useful in any context in which predictor variables 
+(sources of disturbance, infrastructure, or any other spatial variable) vary in space and 
+are expected to affect the biological response variable or process being studied beyond
+their actual limits. This includes but is not limited to
+those studies in which
+either the distance to the nearest feature is computed and used as a predictor 
+(e.g. distance to roads in Torres et al. 2016, or distance to forest edges in Martello et al. 2022)
+or those in which the density or amount of a landscape variable is computed 
+(e.g. Jackson & Fahrig 2015, Miguet 2016, Martin 2018). Review literature shows that the 
+so-called multiscale
+approaches have been applied for a different set of taxa (MacGarigal et al. 2016, Martin 2018)
+using distinct biological measures for a wide range of ecological processes (Martin 2016).
+Here we present examples of contexts in which our approach might be useful to estimate
+cumulative impacts and zones of influence, and provide studies to illustrate 
+questions in which these dimensions could have been evaluated.
+
+# Illustrative examples
+
+In table C1, we present some examples of how the cumulative impacts of landscape disturbance and
+human infrastructure could be inferred on different ecological processes, using distinct 
+types of data, for different response variables and organisms. For instance, studies on
+movement and behavioral ecology may evaluate how movement rates (e.g. Hansbauer et al. 2008) 
+or the probability of an animal being in a given behavioral state (e.g. Morales et al. 2004) 
+depend on the influence of disturbances in the landscape, and this influence might be 
+measure through either the ZoI of the nearest feature or the cumulative ZoI metrics. 
+Such response measures can based on different types of data 
+(e.g. locations recorded through GPS, VHF, or other devices, capture-mark-recapture and camera trap 
+data) for different organisms, from animals who move actively (e.g. Ramos et al. 2020) 
+to seeds, fungal spores, or other propagules that are displaced by animals, wind, or other agents
+(e.g. Carlo et al 2015, Norros et al. 2012).
+
+Likewise, in the context of populations and communities, for example, the ZoI metrics related to
+disturbance sources might be computed around sampling points, 
+considering multiple radii, and used to fit models estimating their effects on
+population-level metrics (growth rate, survival/mortality, fecundity; e.g. Cerqueira et al. 2021) 
+for basically any species
+or on community-level metrics (species diversity metrics, species abundance, 
+co-occurrence probability, interaction network metrics; e.g. Torres et al. 2016). 
+
+More examples might be found in Table C1. We also provide in the table a few 
+references illustrating studies in which a similar 
+approach was used or could be adapted to incorporate an evaluation of cumulative impacts.
+In most of these studies, though, only one of the metrics was used - the distance to the
+nearest infrastructure or land cover type, related to the ZoI of the nearest feature, 
+or the density or amount of landscape variables, related to the cumulative ZoI as presented
+here.
+
+
+```{r table_applications, echo = F}
+df <- tibble::tribble(
+  ~`Ecological process`, ~`Response variable`, ~`Type of data`, ~`Statistical model`, ~`Taxon`, ~`Reference`,
+  "Movement ecology", "Movement rate, step length, dispersal distance, turning angles", "GPS, VHF, Capture-mark- recapture", "Generalized linear (mixed) models [glm/glmm]", "Animals, seeds, fungi, other propagules", "[7, 8, 10, 11, 13]",
+  "Habitat selection\nResource- or step- selection functions", "Presence, given availability", "GPS", "Binomial glm/glmm, conditional regression", "Animals", "[6, 14, 15, 16, 17]",
+  "Ecological niche/\nSpecies distribution models", "Presence only, presence- background", "Ocurrence, camera-trap", "glm, MaxEnt, RandomForest", "Any organism", "[16, 18, 19, 20, 21]", 
+  "Population dynamics", "Population size, growth rate, survival, mortality, fecundity", "Occurrence, count, distance-sampling, camera-trap", "glm/glmm, occupancy models, survival models", "Any organism", "[5, 12, 22]",
+  "Community dynamics", "Species (co)occurrence, species occurrence probability, species richness, species abundances, diversity indices", "Multi-species occurrences or abundance", "Joint species distribution models", "Multiple", "[1, 2, 23, 24]",
+  "Ecological interactions", "Interaction network metrics, probability of interaction", "Focal sampling of interactions", "glm/glmm", "Any type of interaction (e.g. throphic, mutualism, comensalism)", "[25, 26, 27, 28]",
+  "Genetics", "Kinship, effective population size, genetic diversity, inbreeding coefficients, genetic differentiation between populations", "Genetic samples from multiple populations or areas", "Multiple", "Any organism", "[16, 27]",
+)
+
+kableExtra::kable(df, booktabs = T, caption = caption("Tab_1", "Examples of cases in which the cumulative impact approach could be applied, considering different ecological processes, response variables, types of data, statistical models, and organisms studied. The last column shows some references in which a similar approach was used or could have been applied.")) |> 
+  kableExtra::kable_styling(full_width = T)
+```
+
+# Using the approach
+
+To apply the cumulative ZoI approach in these different contexts, we might start
+by following the same workflow presented in Fig. 3 of the main text. First, using 
+the spatial variables of interest, we should compute the two ZoI metrics for multiple radii and
+shapes, as relevant for the empirical case. Once this is done, they can be used to 
+annotate the biological data considering their spatial locations or sampling sites.
+Given the table with response and predictor variable data is ready, equation 1 from the 
+main text might be adapted to look for
+the relationship between the sampled biological response variables and the ZoI and other 
+spatial or non-spatial variables. Here the analyst might use whatever modeling approach
+suits the data and context better; the possibility of cumulative effects of each single
+spatial variable type and their scale of effect or zone of influence are already 
+considered since they were used to compute the ZoI predictor variables. This means that,
+in this formulation, it is not necessary to change the model specification to assess
+the cumulative impacts of multiple features of a given type of variable.
+More details on how this is done in practice are shown in the 
+[vignettes](https://ninanor.github.io/oneimpact/index.html) of the
+`oneimpact` R package.
+
+# References
+
+[1] Torres, A., Jaeger, J. A. G., & Alonso, J. C. (2016). Assessing large-scale wildlife responses to human infrastructure development. Proceedings of the National Academy of Sciences, 113(30), 8472–8477. \url{https://doi.org/10.1073/pnas.1522488113}
+
+[2] Martello, F., Andriolli, F. S., Medeiros, H. R., Barão, T., & Ribeiro, M. C. (2022). Edge contrast modulates ant community responses to edge distance in agricultural landscapes. Agricultural and Forest Entomology, 24(3), 289–300. \url{https://doi.org/10.1111/afe.12492}
+
+[3] Jackson, H. B., & Fahrig, L. (2015). Are ecologists conducting research at the optimal scale? Global Ecology and Biogeography, 24(1), 52–63. \url{https://doi.org/10.1111/geb.12233}
+
+[4] Miguet, P., Jackson, H. B., Jackson, N. D., Martin, A. E., & Fahrig, L. (2016). What determines the spatial extent of landscape effects on species? Landscape Ecology, 31(6), 1177–1194. \url{https://doi.org/10.1007/s10980-015-0314-1}
+
+[5] Martin, A. E. (2018). The Spatial Scale of a Species’ Response to the Landscape Context Depends on which Biological Response You Measure. Current Landscape Ecology Reports, 3(1), 23–33.  
+\url{https://doi.org/10.1007/s40823-018-0030-z}
+
+[6] McGarigal, K., Wan, H. Y., Zeller, K. A., Timm, B. C., & Cushman, S. A. (2016). Multi-scale habitat selection modeling: A review and outlook. Landscape Ecology, 31(6), 1161–1175. \url{https://doi.org/10.1007/s10980-016-0374-x}
+
+[7] Hansbauer, M. M., Storch, I., Leu, S., Nieto-Holguin, J.-P., Pimentel, R. G., Knauer, F., & Metzger, J. P. W. (2008). Movements of neotropical understory passerines affected by anthropogenic forest edges in the Brazilian Atlantic rainforest. Biological Conservation, 141(3), 782–791. \url{https://doi.org/10.1016/j.biocon.2008.01.002}
+
+[8] Morales, J. M., Haydon, D. T., Frair, J., Holsinger, K. E., & Fryxell, J. M. (2004). Extracting more out of relocation data: Building movement models as mixtures of random walks. Ecology, 85(9), 2436–2445. \url{https://doi.org/10.1890/03-0269}
+
+[9] Ramos, D. L., Pizo, M. A., Ribeiro, M. C., Cruz, R. S., Morales, J. M., & Ovaskainen, O. (2020). Forest and connectivity loss drive changes in movement behavior of bird species. Ecography, 43(8), 1203–1214. \url{https://doi.org/10.1111/ecog.04888}
+
+[10] Carlo, T. A., Tewksbury, J. J., & del Río, C. M. (2009). A new method to track seed dispersal and recruitment using 15 N isotope enrichment. Ecology, 90(12), 3516–3525. \url{https://doi.org/10.1890/08-1313.1}
+
+[11] Norros, V., Penttilä, R., Suominen, M., & Ovaskainen, O. (2012). Dispersal may limit the occurrence of specialist wood decay fungi already at small spatial scales. Oikos, 121(6), 961–974.  
+\url{https://doi.org/10.1111/j.1600-0706.2012.20052.x}
+
+[12] Cerqueira, R. C., de Rivera, O. R., Jaeger, J. A. G., & Grilo, C. (2021). Direct and indirect effects of roads on space use by jaguars in Brazil. Scientific Reports, 11(1), 22617. \url{https://doi.org/10.1038/s41598-021-01936-6}
+
+[13] van Moorter, B., Bunnefeld, N., Panzacchi, M., Rolandsen, C. M., Solberg, E. J., & Sæther, B.-E. (2013). Understanding scales of movement: Animals ride waves and ripples of environmental change. Journal of Animal Ecology, 82(4), 770–780. \url{https://doi.org/10.1111/1365-2656.12045}
+
+[14] Laforge, M. P., Brook, R. K., van Beest, F. M., Bayne, E. M., & McLoughlin, P. D. (2016). Grain-dependent functional responses in habitat selection. Landscape Ecology, 31(4), 855–863.  
+\url{https://doi.org/10.1007/s10980-015-0298-x}
+
+[15] Zeller, K. A., Vickers, T. W., Ernest, H. B., & Boyce, W. M. (2017). Multi-level, multi-scale resource selection functions and resistance surfaces for conservation planning: Pumas as a case study. PLOS ONE, 12(6), e0179570. \url{https://doi.org/10.1371/journal.pone.0179570}
+
+[16] Zeller, K. A., Jennings, M. K., Vickers, T. W., Ernest, H. B., Cushman, S. A., & Boyce, W. M. (2018). Are all data types and connectivity models created equal? Validating common connectivity approaches with dispersal data. Diversity and Distributions, 24(7), 868–879. \url{https://doi.org/10.1111/ddi.12742}
+
+[17] Skarin, A., Sandström, P., & Alam, M. (2018). Out of sight of wind turbines: Reindeer response to wind farms in operation. Ecology and Evolution, 8(19), 9906–9919. \url{https://doi.org/10.1002/ece3.4476}
+
+[18] Panzacchi, M., van Moorter, B., Strand, O., Loe, L. E., & Reimers, E. (2015). Searching for the fundamental niche using individual-based habitat selection modelling across populations. Ecography, 38(7), 659–669. \url{https://doi.org/10.1111/ecog.01075}
+
+[19] Rezaei, S., Mohammadi, A., Malakoutikhah, S., & Khosravi, R. (2022). Combining multiscale niche modeling, landscape connectivity, and gap analysis to prioritize habitats for conservation of striped hyaena (Hyaena hyaena). PLOS ONE, 17(2), e0260807. \url{https://doi.org/10.1371/journal.pone.0260807}
+
+[20] Bertassoni, A., Costa, R. T., Gouvea, J. A., Bianchi, R. de C., Ribeiro, J. W., Vancine, M. H., & Ribeiro, M. C. (2019). Land-use changes and the expansion of biofuel crops threaten the giant anteater in southeastern Brazil. Journal of Mammalogy, 100(2), 435–444. \url{https://doi.org/10.1093/jmammal/gyz042}
+
+[21] Santos, J. P., Sobral-Souza, T., Brown Jr, K. S., Vancine, M. H., Ribeiro, M. C., & Freitas, A. V. L. (2020). Effects of landscape modification on species richness patterns of fruit-feeding butterflies in Brazilian Atlantic Forest. Diversity and Distributions, 26(2), 196–208. \url{https://doi.org/10.1111/ddi.13007}
+
+[22] Regolin, A. L., Oliveira-Santos, L. G., Ribeiro, M. C., & Bailey, L. L. (2021). Habitat quality, not habitat amount, drives mammalian habitat use in the Brazilian Pantanal. Landscape Ecology, 36(9), 2519–2533. \url{https://doi.org/10.1007/s10980-021-01280-0}
+
+[23] Miguet, P., Fahrig, L., & Lavigne, C. (2017). How to quantify a distance‐dependent landscape effect on a biological response. Methods in Ecology and Evolution, 8(12), 1717–1724. \url{https://doi.org/10.1111/2041-210X.12830}
+
+[24] Suárez-Castro, A. F., Raymundo, M., Bimler, M., & Mayfield, M. M. (2022). Using multi-scale spatially explicit frameworks to understand the relationship between functional diversity and species richness. Ecography, 2022(6), e05844. \url{https://doi.org/10.1111/ecog.05844}
+
+[25] Moreira, E. F., Boscolo, D., & Viana, B. F. (2015). Spatial Heterogeneity Regulates Plant-Pollinator Networks across Multiple Landscape Scales. PLOS ONE, 10(4), e0123628. \url{https://doi.org/10.1371/journal.pone.0123628}
+
+[26] Schneiberg, I., Boscolo, D., Devoto, M., Marcilio-Silva, V., Dalmaso, C. A., Ribeiro, J. W., Ribeiro, M. C., Guaraldo, A. de C., Niebuhr, B. B., & Varassin, I. G. (2020). Urbanization homogenizes the interactions of plant-frugivore bird networks. Urban Ecosystems, 23(3), 457–470. \url{https://doi.org/10.1007/s11252-020-00927-1}
+
+[27] Monteiro, E. C. S., Pizo, M. A., Vancine, M. H., & Ribeiro, M. C. (2021). Forest cover and connectivity have pervasive effects on the maintenance of evolutionary distinct interactions in seed dispersal networks. Oikos, oik.08240. \url{https://doi.org/10.1111/oik.08240}
+
+[28] Marjakangas, E., Abrego, N., Grøtan, V., Lima, R. A. F., Bello, C., Bovendorp, R. S., Culot, L., Hasui, É., Lima, F., Muylaert, R. L., Niebuhr, B. B., Oliveira, A. A., Pereira, L. A., Prado, P. I., Stevens, R. D., Vancine, M. H., Ribeiro, M. C., Galetti, M., & Ovaskainen, O. (2020). Fragmented tropical forests lose mutualistic plant–animal interactions. Diversity and Distributions, 26(2), 154–168. \url{https://doi.org/10.1111/ddi.13010}
+
+[29] Collevatti, R. G., dos Santos, J. S., Rosa, F. F., Amaral, T. S., Chaves, L. J., & Ribeiro, M. C. (2020). Multi-Scale Landscape Influences on Genetic Diversity and Adaptive Traits in a Neotropical Savanna Tree. Frontiers in Genetics, 11. \url{https://www.frontiersin.org/articles/10.3389/fgene.2020.00259}

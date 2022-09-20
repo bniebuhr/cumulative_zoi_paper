@@ -1,5 +1,5 @@
 ---
-title: "Appendix C"
+title: "Appendix D"
 subtitle: "Cumulative impacts of infrastructure on reindeer space use: fitting habitat selection models"
 author: ""
 date: ""
@@ -21,7 +21,7 @@ output:
 header-includes:
   \usepackage{float}
   \usepackage{caption}
-  \DeclareCaptionLabelFormat{Sformat}{#1 C#2}
+  \DeclareCaptionLabelFormat{Sformat}{#1 D#2}
   \captionsetup[figure]{labelformat=Sformat}
   \captionsetup[table]{labelformat=empty}
 editor_options: 
@@ -61,7 +61,7 @@ palette(ninaPalette())
 
 # captions
 library(captioner)
-caption <- captioner("Table C", FALSE)
+caption <- captioner("Table D", FALSE)
 
 # Connect to PostGIS
 source("~/.pgpass")
