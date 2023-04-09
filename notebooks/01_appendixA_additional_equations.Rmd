@@ -1,11 +1,15 @@
 ---
 title: "Appendix A"
-subtitle: "Defining and deriving the zone of influence for multiple infrastructure features"
+subtitle: "Defining and deriving the zone of influence for multiple features"
 author: ""
 date: ""
 geometry: margin=2cm
 abstract: | 
-  In this document, we provide additional details around the definition of the zone of influence (ZoI). First, we define the ZoI $\phi$ and present examples of ZoI functions with different shapes, parameterized with the ZoI radius. Second, we derive the ZoI of the nearest feature and the cumulative ZoI of multiple features of an infrastructure for types of infrastructure and spatial variables that are represented as lines (e.g. roads, power lines) or polygons (e.g. dams, mining sites). This complements the derivation for point-type infrastructure as presented in the main text of Niebuhr et al. *Estimating the cumulative impact and zone of influence of anthropogenic infrastructure on biodiversity.*
+  In this document, we provide additional details around the definition of the zone of influence (ZOI). First, we define the ZOI $\phi$ and present examples of ZOI functions with different shapes, parameterized with the ZOI radius. Second, we derive the ZOI of the nearest 
+  feature and the cumulative ZOI of multiple features of an infrastructure for types of infrastructure and spatial variables that are
+  represented as lines (e.g. roads, power lines) or polygons (e.g. dams, mining sites). This complements the derivation for point-type
+  features as presented in the main text of Niebuhr et al. *Estimating the cumulative impact and zone of influence of anthropogenic
+  features on biodiversity.* Methods in Ecology and Evolution.
 bibliography: cuminf_bib.bib
 output:
   NinaR::jensAnalysis:
@@ -52,31 +56,31 @@ palette(ninaPalette())
 
 # Introduction
 
-In the main text, we defined the zone of influence (ZoI) and derived the estimation 
-of the ZoI of multiple features of an infrastructure type under different 
-assumptions, but only did so for infrastructure that can be represented as points, 
+In the main text, we defined the zone of influence (ZOI) and derived the estimation 
+of the ZOI of multiple features of an infrastructure type under different 
+assumptions, but only did so for anthropogenic features that can be represented as points, 
 such as houses, tourist cabins, or wind turbines. Here we complement it by exemplifying 
-ZoI functions with different shapes, parameterized on the ZoI radius $r$, and derive 
+ZOI functions with different shapes, parameterized on the ZOI radius $r$, and derive 
 similar equations for linear infrastructure (e.g. roads, railways, trails, power lines) 
 and infrastructure or landscape variables represented by polygons (e.g. mining sites, 
 hydro dams, deforestation areas or polygons outlining specific land cover and land use types).
 
 # Definition of the Zone of Influence
 
-As defined in the main text, the ZoI is the function $\phi$ that informs how the 
-impact of a given infrastructure feature decreases with distance. Formally, the 
-ZoI $\phi = f(d, r)$ is any decay function that has a maximum value 
-1 where infrastructure is located, decreases towards zero as the Euclidean 
-distance $d$ increases, and possibly vanishes at a given point, the ZoI radius $r$. 
-Broadly speaking, the ZoI is characterized by its shape and radius. Here we use 
+As defined in the main text, the ZOI is the function $\phi$ that informs how the 
+impact of a given feature decreases with distance. Formally, the 
+ZOI $\phi = f(d, r)$ is any decay function that has a maximum value 
+1 where the feature is located, decreases towards zero as the Euclidean 
+distance $d$ increases, and possibly vanishes at a given point, the ZOI radius $r$. 
+Broadly speaking, the ZOI is characterized by its shape and radius. Here we use 
 four functions with different shapes to evaluate how the impact decays with distance, 
 even though in principle any function $\phi$ as defined above could be used. 
 Below we write these four functions and show how the radius $r$ is defined in each one.
 
-## Functions with a well-defined ZoI radius
+## Functions with a well-defined ZOI radius
 
 Some functions vanish for a certain non-infinite distance and therefore present 
-well-defined radii. Here the ZoI radius $r$ represents the distance beyond which $\phi = 0$.
+well-defined radii. Here the ZOI radius $r$ represents the distance beyond which $\phi = 0$.
 We used two functions within this class: the threshold and the linear decay (Bartlett)
 functions.
 
@@ -85,26 +89,26 @@ functions.
 The threshold function is defined as 
 
 $$
-\phi_{threshold}(d_{i_k}, r_k) = 
+\phi_{threshold}(d_{i,k}, r_k) = 
     \begin{cases}
-      1 & \text{if $d_{i_k} < r_k$} \\
-      0 & \text{if $d_{i_k} \ge r_k$}
+      1 & \text{if $d_{i,k} < r_k$} \\
+      0 & \text{if $d_{i,k} \ge r_k$}
     \end{cases}
 $$
 
-where $d_{i_k}$ is the distance to the infrastructure $i$ of type $k$ and $r_k$ 
-is the radius of the ZoI for infrastructure of type $k$. Then, $\phi_{threshold}$ 
-represents a constant impact of each infrastructure feature until $d = r$ and is 
+where $d_{i,k}$ is the distance to the feature $i$ of type $k$ and $r_k$ 
+is the radius of the ZOI for the features of type $k$. Then, $\phi_{threshold}$ 
+represents a constant impact of each feature until $d = r$ and is 
 similar to what has generally been used when buffer zones are created around 
-infrastructure to calculate derived measures.
+anthropogenic features to calculate derived measures.
 
 Fig. A\ref{fig:plot_threshold} shows a plot of $\phi_{threshold}$ with $r = 10$ km.
 
-```{r plot_threshold, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a threshold ZoI function with radius = 10 km."}
+```{r plot_threshold, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a threshold ZOI function with radius = 10 km, for a feature located at the origin."}
 library(oneimpact)
 library(ggplot2)
 
-oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = threshold_decay, 
+oneimpact::plot_zoi1d(points = 0, radius = 10, fun = threshold_decay, 
                       range_plot = c(-20, 20)) +
   labs(x = "Distance (km)")
 ```
@@ -112,49 +116,49 @@ oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = threshold_decay,
 ### Linear decay function
 
 The linear decay function, also called tent decay function or "Bartlett" filter 
-(Harris, 1978), corresponds to 1 at the infrastructure location and decreases 
+(Harris, 1978), corresponds to 1 at the feature location and decreases 
 linearly with the distance from it, until it reaches zero at a given distance,
-defined here as the ZoI radius $r$. Formally, the linear ZoI function 
+defined here as the ZOI radius $r$. Formally, the linear ZOI function 
 $\phi_{linear}$ is defined as:
 
 $$
-\phi_{linear}(d_{i_k}, r_k) = 
+\phi_{linear}(d_{i,k}, r_k) = 
     \begin{cases}
-      1 - \frac{d_{i_k}}{r_k} & \text{if $d_{i_k} < r_k$} \\
-      0 & \text{if $d_{i_k} \ge r_k$}
+      1 - \frac{d_{i,k}}{r_k} & \text{if $d_{i,k} < r_k$} \\
+      0 & \text{if $d_{i,k} \ge r_k$}
     \end{cases}
 $$
 
-where $d_{i_k}$ is the distance to the infrastructure $i$ of type $k$ and $r_k$ 
-is the radius of the ZoI for infrastructure of type $k$.
+where $d_{i,k}$ is the distance to the feature $i$ of type $k$ and $r_k$ 
+is the radius of the ZOI for features of type $k$.
 
 Fig. A\ref{fig:plot_linear} shows a plot of $\phi_{linear}$ with $r = 10$ km.
 
-```{r plot_linear, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a linear decaying ZoI function with radius = 10 km."}
-oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = linear_decay, 
+```{r plot_linear, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a linear decaying ZOI function with radius = 10 km, for a feature located at the origin."}
+oneimpact::plot_zoi1d(points = 0, radius = 10, fun = linear_decay, 
                       range_plot = c(-20, 20)) +
   labs(x = "Distance (km)")
 ```
 
 ## Functions that do not vanish with distance
 
-Some functions decrease but do not vanish as the distance from infrastructure increases. 
-In these cases we define the ZoI radius $r$ as the distance at which the ZoI decreases
-to $\phi = \phi_{limit}$, an arbitrary small ZoI value beyond which the influence
-of the infrastructure is considered to be negligible. In these cases, the ZoI 
+Some functions decrease but do not vanish as the distance from anthropogenic features increase. 
+In these cases we define the ZOI radius $r$ as the distance at which the ZOI decreases
+to $\phi = \phi_{limit}$, an arbitrary small ZOI value beyond which the influence
+of the feature is considered to be negligible. In these cases, the ZOI 
 definition needs an extra parameter and is defined as $\phi = f(d, r, \phi_{limit})$.
 We used two functions within this class: the exponential decay and the Gaussian decay
-functions. For both we set $\phi_{limit} = 0.05$ for all infrastructure.
+functions. For both we set $\phi_{limit} = 0.05$ for all features.
 
 ### Exponential decay function
 
 The exponential decay function is defined as 
 
 $$
-\phi_{exp}(d_{i_k}, r_k, \phi_{limit_k}) = \exp(-\lambda_{r_k} d_{i_k})
+\phi_{exp}(d_{i,k}, r_k, \phi_{limit_k}) = \exp(-\lambda_{r_k} d_{i,k})
 $$
 
-where $d_{i_k}$ is the distance to the infrastructure $i$ of type $k$ and the 
+where $d_{i,k}$ is the distance to the feature $i$ of type $k$ and the 
 decay parameter $\lambda_{r_k}$ is defined in terms of $r_k$ and $\phi_{limit_k}$:
 
 $$
@@ -164,8 +168,8 @@ $$
 Here $\ln$ is the logarithm with base $e$. Fig. A\ref{fig:plot_exponential} shows 
 a plot of $\phi_{exp}$ with $r = 10$ km.
 
-```{r plot_exponential, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of an exponential decaying ZoI function with radius = 10 km."}
-oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = exp_decay, 
+```{r plot_exponential, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of an exponential decaying ZOI function with radius = 10 km, for a feature located at the origin."}
+oneimpact::plot_zoi1d(points = 0, radius = 10, fun = exp_decay, 
                       range_plot = c(-20, 20)) +
   labs(x = "Distance (km)")
 ```
@@ -175,10 +179,10 @@ oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = exp_decay,
 The Gaussian (or half-normal) decay function is defined as 
 
 $$
-\phi_{Gauss}(d_{i_k}, r_k, \phi_{limit_k}) = \exp(-\lambda_{r_k} d_{i_k}^2)
+\phi_{Gauss}(d_{i,k}, r_k, \phi_{limit_k}) = \exp(-\lambda_{r_k} d_{i,k}^2)
 $$
 
-where $d_{i_k}$ is the distance to the infrastructure $i$ of type $k$ and the 
+where $d_{i,k}$ is the distance to the feature $i$ of type $k$ and the 
 decay parameter $\lambda_{r_k}$ is defined in terms of $r_k$ and $\phi_{limit_k}$:
 
 $$
@@ -187,17 +191,17 @@ $$
 
 In Fig. A\ref{fig:plot_gaussian} we visualize $\phi_{Gauss}$ with $r = 10$ km.
 
-```{r plot_gaussian, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a Gaussian decaying ZoI function with radius = 10 km."}
-oneimpact::plot_zoi1d(points = 0, zoi_radius = 10, fun = gaussian_decay, 
+```{r plot_gaussian, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, fig.cap="Illustration of a Gaussian decaying ZOI function with radius = 10 km, for a feature located at the origin."}
+oneimpact::plot_zoi1d(points = 0, radius = 10, fun = gaussian_decay, 
                       range_plot = c(-20, 20)) +
   labs(x = "Distance (km)")
 ```
 
-Notice that, even though the ZoI radius $r$ is defined for all the
-functions, the change in their shape strongly modifies the interpretation of how
-the ZoI changes with distance (see also Fig. 1 in the main text).
+Notice that, even though the ZOI radius $r$ is defined for all the
+functions, the change in their shape modifies the interpretation of how
+the ZOI changes with distance (see also Fig. 1 in the main text).
 
-# Derivation of zones of influence for multiple features of a type of infrastructure
+# Derivation of zones of influence for multiple anthropogenic features of a given type
 
 We start from the same baseline presented in the main text: we use as an example 
 of statistical model a habitat-selection function (HSF; Fieberg et al., 2021). 
@@ -210,32 +214,32 @@ w(\textbf{X}) = \exp \left( \beta_0 + \overbrace{\beta_1 X_1}^\text{A) Infrastru
 \end{equation}
 
 where $\textbf{X} = X_1,X_2, ...,  X_k$ correspond to $k$ different types of 
-infrastructure (or other spatiotemporal variables) and $\beta_k$ represents the 
-effect size of the infrastructure of type $k$.
+infrastructure or other anthropogenic features and $\beta_k$ represents the 
+effect size of the impact of spatial features of type $k$.
 
-## ZoI metrics
+## ZOI metrics
 
-As shown in the main text, when multiple features of a type of infrastructure are
-present in the landscape, we can calculate two ZoI metrics: the ZoI of the nearest 
-feature only ($\phi_{nearest}$) and the cumulative ZoI of multiple features
+As shown in the main text, when multiple features of the same type are
+present in the landscape, we can calculate two ZOI metrics: the ZOI of the nearest 
+feature only ($\phi_{nearest}$) and the cumulative ZOI of multiple features
 ($\phi_{cumulative}$).
 
-We assume that in the landscape there are $n_k$ features of the same type of 
-infrastructure $k$, and let the influence of the feature $i$ of an infrastructure 
-\textit{k} be a ZoI function $\phi$ as defined above. As we show in the main text, 
+We assume that in the landscape there are $n_k$ features of the same type $k$, 
+and let the influence of the feature $i$ of a feature 
+\textit{k} be a ZOI function $\phi$ as defined above. As we show in the main text, 
 for point-like infrastructure we can sum the effect of each feature, so that the 
 impact terms in equation \ref{eqn:HSF} become:
 
 \begin{equation}
 \label{eqn:HSFtermPoint}
-    I_k = \beta_k X_k = \sum_{i=1}^{n_k} \beta_{i_k} \phi_{i_k}.
+    I_k = \beta_k X_k = \sum_{i=1}^{n_k} \beta_{i,k} \phi_{i_k}.
 \end{equation}
 
 Likewise, for linear infrastructure we can integrate the term
 
 \begin{equation}
 \label{eqn:HSFtermLine}
-    I_k = \beta_k X_k = \int_{L} \beta_{k}(l) \ \phi_{k}(l; d_{i_k}, r_k) dl
+    I_k = \beta_k X_k = \int_{L} \beta_{k}(l) \ \phi_{k}(l; d_{i,k}, r_k) dl
 \end{equation}
 
 where $dl$ denotes the length on an infinitesimal infrastructure segment and $L$ is the
@@ -244,36 +248,43 @@ For polygon variables we can similarly integrate the term, but on two dimensions
 
 \begin{equation}
 \label{eqn:HSFtermPolygon}
-    I_k = \beta_k X_k = \iint_{\Omega} \beta_{k}(x,y) \ \phi_{k}(x, y; d_{i_k}, r_k) \ dx \ dy
+    I_k = \beta_k X_k = \iint_{\Omega} \beta_{k}(x,y) \ \phi_{k}(x, y; d_{i,k}, r_k) \ dx \ dy
 \end{equation}
 
 where $\Omega$ is the whole study area.
 
 ## Zone of influence of the nearest feature
 
-To estimate the ZoI of the nearest feature alone, we showed that, for point-like 
-infrastructure, one generally considers $\beta_i = 0$ for all $i > 1$ (where the 
+To estimate the ZOI of the nearest feature alone, we showed that, for point-like 
+features, one generally considers $\beta_i = 0$ for all $i > 1$ (where the 
 features are ordered by increasing distance), i.e., only the nearest feature is 
 assumed to influence a given site. We can make equivalent assumptions for linear 
 and area infrastructure by considering only the nearest (orthogonal) segment of 
 linear infrastructure or the closest edge of the closest polygon to influence 
 processes in a given location. In such a way, their influence is similar to that 
 of a point. As a consequence, eq. 4 from the main text keeps valid to represent 
-the influence of the nearest feature for linear and area variables:
+the influence of the nearest feature for linear and polygon variables:
 
 \begin{equation}
 \label{eqn:HSFnearest}
 \begin{split}
-    I_k & = \beta_{1_k} \phi_{1_k} \\
-        & = \beta_{k} \phi_{nearest_k}.
+    I_k & = \beta_{1,k} \cdot \phi_{1,k} \\
+        & = \beta_{k} \cdot \phi_{nearest_k}.
 \end{split}                
 \end{equation}
 
+Here $\phi_{nearest}$ can be set to represent the distance to the nearest feature
+(or some transformation of that, such as the log-distance to the nearest feature),
+as it is most common in the literature. However, our formulation with the 
+definition of the set of functions $\phi$ to represent the ZOI allow for more a 
+general representation of the impact of the nearest feature, while still allowing 
+the estimation of the shape and radius of the zone of influence.
+
 ## Cumulative zone of influence
 
-To derive the cumulative ZoI of multiple features of an infrastructure type, 
-for point-like infrastructure we assumed that all features exerted the same influence, 
-so that $\beta_1 =\beta_2 = ... = \beta_k = \beta$. If we do similar assumptions 
+To derive the cumulative ZOI of multiple features of a given type, 
+for point-like features we assumed that all features exerted the same influence, 
+so that $\beta_{1,k} =\beta_{2,k} = ... = \beta_k = \beta$. If we do similar assumptions 
 for lines and polygons -- that all infinitesimal segments $dl$ present the same 
 influence over $L$ and that all pieces of area of the polygons present similar 
 influence around them, eq. 5 from the main text remains valid for these types of variables:
@@ -282,16 +293,16 @@ influence around them, eq. 5 from the main text remains valid for these types of
 \label{eqn:HSFcumzoi}
 \begin{split}
     I_k & = \beta_k \int_{L} \phi_{k}(l) \ dl \\
-        & = \beta_k \phi_{cumulative_k} \\
+        & = \beta_k \ \phi_{cumulative_k} \\
         & \text{and} \\
     I_k & = \beta_k \iint_{\Omega} \phi_{k}(x, y) \ dx \ dy \\
-        & = \beta_k \phi_{cumulative_k}.
+        & = \beta_k \ \phi_{cumulative_k}.
 \end{split}
 \end{equation}
 
-The only difference here regards how the cumulative ZoI function $\phi_{cumulative}$ 
-is defined -- as a summation for point infrastructure (eq. 5 in the main text) or 
-as an integral over 1 or 2 dimensions for linear and area infrastructure (eq. 
+The only difference here regards how the cumulative ZOI function $\phi_{cumulative}$ 
+is defined -- as a summation for point features (eq. 5 in the main text) or 
+as an integral over 1 or 2 dimensions for linear and area features (eq. 
 \ref{eqn:HSFcumzoi}). 
 
 # Computation of the cumulative zone of influence
@@ -300,12 +311,13 @@ In theory, the calculation of the cumulative zone of influence function
 $\phi_{cumulative}$ for a given study area $\Omega$ requires the computation of 
 eq. 4 from the main text or eq. \ref{eqn:HSFcumzoi} for each infrastructure feature, 
 which might be difficult and computationally challenging for large areas with many 
-infrastructure features spread non-regularly in space. To overcome that limitation, 
+anthropogenic features spread non-regularly in space. To overcome that limitation, 
 we implemented this calculation by constructing filters (or weighing matrices; 
 see Miguet et al., 2017) that follow an assumed decaying function (such as the 
-ZoI functions described above) and used them on neighborhood analyses over the 
-input infrastructure layers (see Appendix D for an illustration of how this 
-approach is applied using the R package `oneimpact`). This is analogous to the 
+ZOI functions described above) and used them on neighborhood analyses over the 
+input infrastructure layers (see the [vignettes](https://ninanor.github.io/oneimpact/articles/) 
+of the `oneimpact` R package for 
+an illustration of how this approach is applied). This is analogous to the 
 approaches presented by Miguet et al. (2017) and Gilleland (2013). Even though 
 we do not demonstrate it here, for non-vanishing function (e.g. exponential or 
 Gaussian decay) when the size of the filter is set properly 
