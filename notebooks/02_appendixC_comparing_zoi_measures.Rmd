@@ -1,20 +1,21 @@
 ---
-title: "Appendix B"
+title: "Appendix C"
 subtitle: "Comparing the zone of influence of the nearest feature with the cumulative zone of influence of multiple features"
 author: ""
 date: ""
 geometry: margin=2cm
 abstract: | 
-  In this document, we aim to illustrate in which conditions the zone of influence (ZoI)
+  In this document, we aim to illustrate in which conditions the zone of influence (ZOI)
   of the nearest feature alone ($\phi_{nearest}$) and the cumulative zone of influence 
   of multiple features ($\phi_{cumulative}$) diverge or converge. First we explore 
-  it by simulating landscapes with different spatial configurations of infrastructure 
+  it by simulating landscapes with different spatial configurations of anthropogenic 
   features. Second, we calculate these metrics and compare them for tourist-related 
   infrastructure in the Hardangervidda wild reindeer area in Southern Norway. 
-  Understanding how these ZoI measures change across landscapes is important 
-  to aid the interpretation of their effects on ecological contexts. This document 
+  Understanding how these ZOI measures change across landscapes is important 
+  to aid the interpretation of their effects. This document 
   complements the arguments presented in Niebuhr et al. *Estimating the cumulative 
-  impact and zone of influence of anthropogenic infrastructure on biodiversity.*
+  impact and zone of influence of anthropogenic features on biodiversity.*
+  Methods in Ecology and Evolution.
 output: 
   NinaR::jensAnalysis:
     highlight: tango
@@ -23,7 +24,7 @@ output:
 header-includes:
   \usepackage{float}
   \usepackage{caption}
-  \DeclareCaptionLabelFormat{Sformat}{#1 B#2}
+  \DeclareCaptionLabelFormat{Sformat}{#1 C#2}
   \captionsetup[figure]{labelformat=Sformat}
   \captionsetup[table]{labelformat=empty}
 editor_options: 
@@ -62,7 +63,7 @@ palette(ninaPalette())
 
 # captions
 library(captioner)
-caption <- captioner("Table B", FALSE)
+caption <- captioner("Table C", FALSE)
 ```
 
 # Introduction
@@ -70,27 +71,27 @@ caption <- captioner("Table B", FALSE)
 There are several dimensions that underlie the assessment of the impacts of 
 anthropogenic infrastructure on wildlife. When performing environmental impact 
 assessments, one aims not only to to find which factors affect wildlife and how strongly, 
-but also (i) at which spatial scale there are impacts (the Zone of Influence, ZoI) and 
+but also (i) at which spatial scale there are impacts (the Zone of Influence, ZOI) and 
 (ii) how these impacts sum and interact when (as it is often the case) 
 there are multiple infrastructure and vectors of landscape modification. In the 
-main text of this manuscript, we argue that the cumulative ZoI ($\phi_{cumulative}$) 
+main text of this manuscript, we argue that the cumulative ZOI ($\phi_{cumulative}$) 
 -- proportional to the spatial density of infrastructure features -- 
 might better represent the spatial variation of the cumulative impact of multiple 
-features in the landscape than considering the ZoI based on 
-the nearest feature only ($\phi_{nearest}$). How similar the two ZoI metrics are 
+features in the landscape than considering the ZOI based on 
+the nearest feature only ($\phi_{nearest}$). How similar the two ZOI metrics are 
 and whether one can distinguish between these them, however, might vary depending 
 on the number of features in the landscape, how these features are distributed 
-in space, and what is the ZoI of each of those features.
+in space, and what is the ZOI of each of those features.
 
 In this document we aim to assess in which conditions $\phi_{nearest}$ and 
 $\phi_{cumulative}$ converge and diverge, to allow a better interpretation of 
 their effects on biological response variables in ecological contexts. 
 We first simulate landscapes with point-type infrastructure spread following 
-different patterns, calculate both ZoI metrics, considering multiple ZoI radii, 
+different patterns, calculate both ZOI metrics, considering multiple ZOI radii, 
 and assess when and how these variables might represent different sources of 
 spatial variation. Second, we do the same for a real landscape, the Hardangervidda 
 wild reindeer area in Southern Norway, which is the stage for the the habitat 
-selection analyses presented in the main text and in Appendix C.
+selection analyses presented in the main text and in Appendix D.
 
 # Zone of influence metrics in simulated landscapes
 
@@ -105,7 +106,7 @@ point features are spread on either 5 or only 1 focal cluster, and we choose two
 possible radii of these clusters, corresponding to one more and one less clumped 
 point distribution (radius = 5% [1.5 km] and 15% [4.5 km] of the extent of the 
 landscape[^1]). In such a way, we aim to represent a gradient of spatial clustering 
-of the simulated point features, to evaluate how the ZoI metrics 
+of the simulated point features, to evaluate how the ZOI metrics 
 vary within this gradient. To keep the interpretation simple, we fix the total number 
 of features in the landscape to $n_k = 100$. Yet, we also performed simulations with 
 different numbers of features ($n_k = 10$) and the results are qualitatively similar.
@@ -115,7 +116,7 @@ from points to the center of the cluster, simulated using a bivariate Gaussian d
 To ease the interpretation, however, we call them radii of the clusters.
 
 The landscapes were simulated using the function `set_points()` from the `oneimpact` package. 
-Fig. B1 shows six example landscapes simulated in this gradient of clustering.
+Fig. C1 shows six example landscapes simulated in this gradient of clustering.
 
 ```{r load_packages, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 #Load packages
@@ -154,7 +155,7 @@ ext <- 30000 # extent of the landscape
 nc <- c(5, 1) # number of centers or clusters for clumped
 wd <- c(0.15, 0.05)*ext # width of the "clusters"
 
-# ZoI values
+# ZOI values
 zoi_vals <- c(20, 50, 100, 250, 500, 750, 1000, 1250, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000)
 
 # parameters
@@ -266,7 +267,7 @@ ext <- 30000 # extent of the landscape
 nc <- c(5, 1) # number of centers or clusters for clumped
 wd <- c(0.15, 0.05)*ext # width of the "clusters"
 
-# ZoI values
+# ZOI values
 zoi_vals <- c(20, 50, 100, 250, 500, 750, 1000, 1250, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000)
 
 # parameters
@@ -368,11 +369,13 @@ landscapes_dist_10 <- create_landscapes_10 %>%
 ## Calculating the zone of influence metrics
 
 For each of the simulated landscapes, we calculate both $\phi_{nearest}$ and 
-$\phi_{cumulative}$ with ZoI radii varying from ~ 0.06% to 40% of the 
+$\phi_{cumulative}$ with ZOI radii varying from ~ 0.06% to 40% of the 
 landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares 
-of 30 km extent). For the comparison presented here, we computed both ZoI metrics
-using a linear decay ZoI function (see Fig. 1 in the main text),
-for which the ZoI can be defined only based on the ZoI radius $r$ (see Appendix A).
+of 30 km extent). For the comparison presented here, we computed both ZOI metrics
+using a linear decay ZOI function (see Fig. 1 in the main text),
+for which the ZOI can be defined only based on the ZOI radius $r$ (see Appendix A). 
+The ZOI rasters were computed using the function `calc_zoi()` from the `oneimpact` package
+in R.
 
 ```{r calc_cuminf, echo=FALSE, eval=FALSE}
 filter_type <- "bartlett"
@@ -513,18 +516,18 @@ landscapes_dist_10 <- landscapes_dist_10 %>%
 
 To visualize qualitatively how different are $\phi_{nearest}$ and $\phi_{cumulative}$, 
 we plot them for different spatial configuration of features, considering different 
-ZoI radii. We see in Figures B2, B3, and B4 the two metrics for $r$ = 1.6%, 5%, 
+ZOI radii. We see in Figures C2, C3, and C4 the two metrics for $r$ = 1.6%, 5%, 
 and 10% of the landscape extent (500, 1500, and 3000 m). 
-When the ZoI radius $r$ is small compared to the landscape extent, the two ZoI metrics 
+When the ZOI radius $r$ is small compared to the landscape extent, the two ZOI metrics 
 are similar and, in the computation of $\phi_{cumulative}$, there is interaction 
-between the ZoI of multiple features only for very clustered feature distributions 
-(Fig. B2). As $r$ increases, however, going beyond the minimum distance between 
-features, the ZoI from different features add up in the calculation of
-$\phi_{cumulative}$ and the two ZoI metrics diverge (Fig. B3 and B4). 
-Notice that the values in the color scale change between ZoI metrics for the different
-conditions of feature spatial configuration in Figs. B2-B4.
+between the ZOI of multiple features only for very clustered feature distributions 
+(Fig. C2). As $r$ increases, however, going beyond the minimum distance between 
+features, the ZOI from different features add up in the calculation of
+$\phi_{cumulative}$ and the two ZOI metrics diverge (Fig. C3 and C4). 
+Notice that the values in the color scale change between ZOI metrics for the different
+conditions of feature spatial configuration in Figs. C2-C4.
 
-```{r viz_several_500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 1.66\\% of the landscape extent (500 m)."}
+```{r viz_several_500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZOI radius = 1.66\\% of the landscape extent (500 m)."}
 which_landscapes <- c(0:2, 5)
 indices <- which_landscapes*length(zoi_vals) + 7
 to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
@@ -535,7 +538,7 @@ names(to_viz) <- paste(rep(name[which_landscapes+1], 2),
 plot(to_viz, nc = 4)
 ```
 
-```{r viz_several_1500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 5\\% of the landscape extent (1500 m)."}
+```{r viz_several_1500, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZOI radius = 5\\% of the landscape extent (1500 m)."}
 which_landscapes <- c(0:2, 5)
 indices <- which_landscapes*length(zoi_vals) + 9
 to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
@@ -546,7 +549,7 @@ names(to_viz) <- paste(rep(name[which_landscapes+1], 2),
 plot(to_viz, nc = 4)
 ```
 
-```{r viz_several_3000, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZoI radius = 10\\% of the landscape extent (3000 m)."}
+```{r viz_several_3000, eval=TRUE, echo=FALSE, fig.cap="Illustration of the zone of influence of the nearest feature and the cumulative zone of influence of features for 4 landscapes in a gradient of clustering of the point infrastructure, for ZOI radius = 10\\% of the landscape extent (3000 m)."}
 which_landscapes <- c(0:2, 5)
 indices <- which_landscapes*length(zoi_vals) + 11
 to_viz <- do.call("c", c(landscapes_dist$rast_nearest[indices], landscapes_dist$rast_cuminf[indices]))
@@ -557,7 +560,7 @@ names(to_viz) <- paste(rep(name[which_landscapes+1], 2),
 plot(to_viz, nc = 4)
 ```
 
-## Correlation and variation in the ZoI metrics
+## Correlation and variation in the ZOI metrics
 
 To understand quantitatively how similar are $\phi_{nearest}$ and $\phi_{cumulative}$ 
 in different conditions, we calculated the Pearson correlation coefficient between 
@@ -565,36 +568,36 @@ them, pixel-by-pixel. We also calculated the coefficient of variation (CV, the r
 between the standard deviation and the mean) for each measure for each landscape, 
 as an ancillary quantity to interpret their correlation.
 
-As seen in the plots above (Figs. B2-B4), when the minimum distance between features
+As seen in the plots above (Figs. C2-C4), when the minimum distance between features
 is larger than $2r$, the zone of influence of different features does not overlap 
-and $\phi_{nearest}$ is similar to $\phi_{cumulative}$ (correlation = 1; Fig. B5). 
-This happens when the ZoI of each feature is too small to overlap -- when either 
-the ZoI is small enough or there is a low number of features sparsely distributed 
+and $\phi_{nearest}$ is similar to $\phi_{cumulative}$ (correlation = 1; Fig. C5). 
+This happens when the ZOI of each feature is too small to overlap -- when either 
+the ZOI is small enough or there is a low number of features sparsely distributed 
 in space. This is easily noticed for the regular distribution 
 of points, in which the relative minimum distance between points is high 
-(= 10% of the landscape or 3000 m; Fig. B2 and B3, Fig. B5A), 
+(= 10% of the landscape or 3000 m; Fig. C2 and C3, Fig. C5A), 
 but less evident in the other spatial configuration of points, since the minimum distance between
-points if very small (Fig. B5B-F). As $r$ increases, the two Zoi metrics diverge.
+points if very small (Fig. C5B-F). As $r$ increases, the two ZOI metrics diverge.
 Because $\phi_{nearest}$ does not account for cumulative effects, as $r$ increases 
 its CV decreases faster than the CV of $\phi_{cumulative}$, what explains why 
-the two metrics diverge (Fig. B6).
-The decrease in correlation goes on until a given ZoI radius for which the gradient 
+the two metrics diverge (Fig. C6).
+The decrease in correlation goes on until a given ZOI radius for which the gradient 
 represented by $\phi_{nearest}$ starts to get similar to $\phi_{cumulative}$ again[^2], 
-as shown in Fig. B5. 
-This is mostly evident for more clustered distributions of features (Fig. B5D-F). 
+as shown in Fig. C5. 
+This is mostly evident for more clustered distributions of features (Fig. C5D-F). 
 The point of inflection is related to the radius of the clusters of features.
-For ZoI radii larger than the cluster radius, the variation in $\phi_{nearest}$ 
-within the clusters vary little compared to their values outside the cluster (Fig. B6), 
+For ZOI radii larger than the cluster radius, the variation in $\phi_{nearest}$ 
+within the clusters vary little compared to their values outside the cluster (Fig. C6), 
 and the cluster of features starts to act as a ``super-feature" 
 (e.g. groups of houses or wind turbines behave as urban areas or wind parks, 
 respectively).
 
 [^2]: Even though the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ 
-increases for large ZoI radii and clustered distributions of features, the absolute 
-scale of each ZoI metric measure is different -- see the values in the color scale 
-in Figs. B2-B4.
+increases for large ZOI radii and clustered distributions of features, the absolute 
+scale of each ZOI metric measure is different -- see the values in the color scale 
+in Figs. C2-C4.
 
-```{r correlations, eval=TRUE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent)."}
+```{r correlations, eval=TRUE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZOI of the nearest feature and the cumulative ZOI of multiple features as the ZOI radius increases, for the different spatial configurations of point infrastructure. The ZOI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent). The black dashed vertical line shows the minimum distance between features in a landscape, and the grey vertical dashed line shows the radius of the cluster of features, for clustered distributions."}
 # plot
 dat_isol <- landscapes_dist %>% 
   dplyr::group_by(n_features, spatial_dist) %>% 
@@ -617,7 +620,7 @@ landscapes_plot <- landscapes_dist %>%
   ylim(0, 1) +
   facet_wrap(~spatial_dist, scales = "free_y") +
   labs(x = "Zone of Influence radius", 
-       y = "Correlation between ZoI metrics",
+       y = "Correlation between ZOI metrics",
        color = "Spatial distribution",
        linetype = "Mean n.n. distance") +
   theme_bw() +
@@ -645,7 +648,7 @@ comprises a much wider area and the biological response is expected to respond a
 larger extents, and the wind farm is only located in a small part of that area, 
 their distribution will be very clumped. 
 
-```{r cv, eval=TRUE, echo=FALSE, results='hide', fig.cap="Coefficient of variation (CV) of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent). The y-axis is presented in log10 scale."}
+```{r cv, eval=TRUE, echo=FALSE, results='hide', fig.cap="Coefficient of variation (CV) of the ZOI of the nearest feature and the cumulative ZOI of multiple features as the ZOI radius increases, for the different spatial configurations of point infrastructure. The ZOI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent). The y-axis is presented in log10 scale. The black dashed vertical line shows the minimum distance between features in a landscape, and the grey vertical dashed line shows the radius of the cluster of features, for clustered distributions."}
 cv_plot <- landscapes_dist %>% 
   # dplyr::filter(spatial_dist == "A: regular") %>% 
   ggplot(aes(zoi_ext)) +
@@ -657,7 +660,7 @@ cv_plot <- landscapes_dist %>%
   geom_line(aes(y = sd_cuminf/mn_cuminf, col = "Cumulative")) +
   facet_wrap(~spatial_dist) +
   labs(x = "Zone of Influence radius", 
-       y = "Coefficient of variation of the ZoI",
+       y = "Coefficient of variation of the ZOI",
        color = "Type of influence",
        linetype = "Mean n.n. distance") +
   theme_bw() +
@@ -668,7 +671,7 @@ cv_plot <- landscapes_dist %>%
 cv_plot
 ```
 
-```{r correlations10, eval=FALSE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for the different spatial configurations of point infrastructure. The ZoI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent)."}
+```{r correlations10, eval=FALSE, echo=FALSE, results='hide', fig.cap="Pixel-to-pixel correlation between the ZOI of the nearest feature and the cumulative ZOI of multiple features as the ZOI radius increases, for the different spatial configurations of point infrastructure. The ZOI radius was varied from 0.06\\% to 40\\% of the landscape extent (i.e., from 20 m to 12 km, given our landscapes are squares of 30 km extent). The black dashed vertical line shows the minimum distance between features in a landscape, and the grey vertical dashed line shows the radius of the cluster of features, for clustered distributions."}
 # plot
 dat_isol_10 <- landscapes_dist_10 %>% 
   dplyr::group_by(n_features, spatial_dist) %>% 
@@ -716,17 +719,18 @@ landscapes_plot_10
 
 We also provide a real-world example to illustrate the similarities of 
 $\phi_{nearest}$ and $\phi_{cumulative}$. We use the Hardangervidda wild reindeer 
-area in Southern Norway (Fig. 5 in the main text, Fig. C1), 
+area in Southern Norway (Fig. 5 in the main text, Fig. D1), 
 the region used for the habitat selection analyses presented in the main text. 
-For more details, see the Appendix C. Similar to what was done above with the 
+For more details, see the Appendix D. Similar to what was done above with the 
 simulated landscapes, we calculated both $\phi_{nearest}$ and $\phi_{cumulative}$ 
-for private cottages and large tourist cabins for ZoI varying from 100 m to 20 km, 
+for private cabins and large tourist resorts for ZOI radii varying from 100 m to 20 km, 
 which corresponds to ~0.1 to 20% of the landscape extent (given the dimensions of 
 the Hardangervidda reindeer area are at the order of 100 km).
 We calculated $\phi_{nearest}$ and $\phi_{cumulative}$ using multiple possible 
 influence functions: linear decay, exponential decay, Gaussian decay, and threshold 
-(see Appendix A). For each of them we calculated the pixel-to-pixel correlation and the
-CV, which are shown in Figs. B7 and B8.
+(see Appendix A), using the `calc_zoi()` function from the `oneimpact` R package. 
+For each of them we calculated the pixel-to-pixel correlation and the
+CV, which are shown in Figs. C7 and C8.
 
 ```{r read_influence_maps_reindeer_GRASS, eval=FALSE, echo=FALSE, results='hide', fig.show='hide'}
 ### Retrieve maps from GRASS for prediction
@@ -871,7 +875,7 @@ corr_plot_reindeer_priv <- df_reindeer %>%
   ylim(0, 1) +
   facet_wrap(~shape, scales = "free_y") +
   labs(x = "Zone of Influence radius", 
-       y = "Correlation between ZoI metrics") +
+       y = "Correlation between ZOI metrics") +
   theme_bw() #+
   # scale_x_log10()
 corr_plot_reindeer_priv
@@ -887,7 +891,7 @@ cv_plot_reindeer_priv <- df_reindeer %>%
   # ylim(0, 1) +
   facet_wrap(~shape) +
   labs(x = "Zone of Influence radius", 
-       y = "CV of the ZoI",
+       y = "CV of the ZOI",
        color = "Type of influence") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -903,7 +907,7 @@ corr_plot_reindeer_pub <- df_reindeer %>%
   ylim(0, 1) +
   facet_wrap(~shape, scales = "free_y") +
   labs(x = "Zone of Influence radius", 
-       y = "Correlation between ZoI metrics") +
+       y = "Correlation between ZOI metrics") +
   theme_bw() #+
   # scale_x_log10()
 corr_plot_reindeer_pub
@@ -919,7 +923,7 @@ cv_plot_reindeer_pub <- df_reindeer %>%
   # ylim(0, 1) +
   facet_wrap(~shape) +
   labs(x = "Zone of Influence radius", 
-       y = "CV of the ZoI",
+       y = "CV of the ZOI",
        color = "Type of influence") +
   scale_y_log10() +
   theme_bw() +
@@ -927,63 +931,63 @@ cv_plot_reindeer_pub <- df_reindeer %>%
 cv_plot_reindeer_pub
 ```
 
-## Correlation and variation in the ZoI metrics
+## Correlation and variation in the ZOI metrics
 
-The pattern of correlations among influence measures for private cottages follow the same
-pattern predicted for clustered spatial points (Fig. B5), what is reasonable given their 
+The pattern of correlations among influence measures for private cabins follow the same
+pattern predicted for clustered spatial points (Fig. C5), what is reasonable given their 
 high density and aggregated spatial distribution 
-(see Fig. C2 in Appendix C and Fig. 5 in the main text).
-Since the minimum distance between private cottages is very small, even for the smallest 
-values of ZoI radius $\phi_{nearest}$ and $\phi_{cumulative}$ are already different, 
-and for all ZoI functions their correlation
-decreases with ZoI radius until $r \sim 5000$ m (Fig. B7A), apart from the threshold 
+(see Fig. D2 in Appendix D and Fig. 5 in the main text).
+Since the minimum distance between private cabins is very small, even for the smallest 
+values of ZOI radius $\phi_{nearest}$ and $\phi_{cumulative}$ are already different, 
+and for all ZOI functions their correlation
+decreases with ZOI radius until $r \sim 5000$ m (Fig. C7A), apart from the threshold 
 function (for which there is no variation in $\phi_{nearest}$ for $r > 5000$ m, since 
-all the function values are 1; see Appendix C).
+all the function values are 1; see Appendix D).
 We did not calculate measures of or tested for clustering for these datasets, but 
-the ZoI radius for which the correlation stops decreasing for private cottages 
+the ZOI radius for which the correlation stops decreasing for private cabins 
 is related to the cluster size -- on relative terms, the distance between private 
-cabins features is small (Table C1). 
-In contrast, for public cabins the correlation among the ZoI metrics does not 
-stop decreasing with the ZoI radius (Fig. B8A), which is also the pattern expected from 
+cabins features is small (Table D1). 
+In contrast, for public resorts the correlation among the ZOI metrics does not 
+stop decreasing with the ZOI radius (Fig. C8A), which is also the pattern expected from 
 the predictions from our simulated landscapes for random and sparse distributions 
-of features (see the relative distance to the nearest tourist cabin in Table C1). 
+of features (see the relative distance to the nearest tourist resort in Table C1). 
 Here it would be necessary to go much beyond $r = 20$ km to detect some clustering 
-in the spatial distribution of tourist cabins, a scale in which the two $\phi$ 
+in the spatial distribution of tourist resorts, a scale in which the two $\phi$ 
 could stop diverging. 
 
-Looking at the variation in both ZoI metrics for each infrastructure type,
-we see for private cottages -- dense and aggregated -- $\phi_{cumulative}$ is more 
+Looking at the variation in both ZOI metrics for each infrastructure type,
+we see that for private cabins -- dense and aggregated -- $\phi_{cumulative}$ is more 
 variable than $\phi_{nearest}$ for most $r$, what explains their divergence, 
 and their correlation stops decreasing when the CV for $\phi_{nearest}$ gets 
-next to zero (Fig. B7B). For tourist resorts -- sparse and spread in space -- 
-the CV of both influence measures is similar for small $r$, and increases with 
-$r$ (Fig. B8B). 
+next to zero (Fig. C7B). For tourist resorts -- sparse and spread in space -- 
+the CV of both ZOI metrics is similar for small $r$, and increases with 
+$r$ (Fig. C8B). 
 
-```{r plot_corr_priv, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for private cottages in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features. The correlation between measures is not shown for the threshold function with $r \\geq 2500 m$, for which the CV of $\\phi_{nearest}$ is null."}
+```{r plot_corr_priv, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZOI of the nearest feature and the cumulative ZOI of multiple features as the ZOI radius increases, for private cabins in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features. The correlation between measures is not shown for the threshold function with $r \\geq 2500 m$, for which the CV of $\\phi_{nearest}$ is null."}
 ggpubr::ggarrange(corr_plot_reindeer_priv, cv_plot_reindeer_priv, align = "v", nrow = 2, labels = "AUTO")
 ```
 
 
-```{r plot_corr_pub, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZoI of the nearest feature and the cumulative ZoI of multiple features as the ZoI radius increases, for tourist cabins in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features."}
+```{r plot_corr_pub, eval=TRUE, echo=FALSE, results='hide', fig.asp=1.2, fig.cap="(A) Pixel-to-pixel correlation and (B) coefficient of variation of the ZOI of the nearest feature and the cumulative ZOI of multiple features as the ZOI radius increases, for tourist resorts in the Hardangervidda wild reindeer area. The vertical dashed line represents the minimum distance between features."}
 ggpubr::ggarrange(corr_plot_reindeer_pub, cv_plot_reindeer_pub, align = "v", nrow = 2, labels = "AUTO")
 ```
 
 # Additional remarks
 
-Here we showed that the two ZoI metrics of influence -- $\phi_{nearest}$ and 
+Here we showed that the two ZOI metrics of influence -- $\phi_{nearest}$ and 
 $\phi_{cumulative}$ -- are more correlated either when the spatial distribution 
-of features is sparse and the ZoI radius is small
+of features is sparse and the ZOI radius is small
 (when the minimum distance between features is larger than the $2r$) 
-or when features are clustered and ZoI is large
+or when features are clustered and ZOI is large
 ($r$ is larger than the size of clusters of features). 
-When the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ is high  
+When the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ is high
 it might be difficult to 
 distinguish whether the impacts of a given infrastructure type accumulate or not. 
 However, whether a given biological response variable is affected by only the nearest feature 
-or the cumulative ZoI of multiple features (or none) remain an empirical problem 
+or the cumulative ZOI of multiple features (or none) remain an empirical problem 
 to be explored in real landscapes.
 
-The results presented here assume infrastructure represented as points, chosen 
+The results presented here assume anthropogenic features represented as points, chosen 
 here because of the simplicity to represent them and place them following 
 different patterns. Yet, these cases also provide insights on when $\phi_{nearest}$ and $\phi_{cumulative}$ are similar for other 
 types of infrastructure, for instance linear infrastructure
@@ -991,4 +995,4 @@ types of infrastructure, for instance linear infrastructure
 defined by polygons and areas (e.g. dams, mining or forestry areas, and deforestation sites). 
 However, we recognize that those patterns can get more complex as these structures
 and spatial patterns extend over large distances and areas, and a further assessment
-of when these ZoI metrics converge might be needed.
+of when these ZOI metrics converge might be needed.

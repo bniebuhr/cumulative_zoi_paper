@@ -21,8 +21,6 @@ header-includes:
   \DeclareCaptionLabelFormat{Sformat}{#1 B#2}
   \captionsetup[figure]{labelformat=Sformat}
   \captionsetup[table]{labelformat=empty}
-  \usepackage{hyperref}
-  \let\tabu@message@etime\relax
 editor_options: 
   markdown: 
     wrap: 72
