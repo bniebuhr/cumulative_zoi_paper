@@ -2,7 +2,7 @@
 
 ### Description
 
-This repository contains code and data to reproduce the analyses in Niebuhr et al (_submitted_), on cumulative impacts of anthropogenic infrastructure.
+This repository contains code and data to reproduce the analyses in Niebuhr et al. (2023), on cumulative impacts of anthropogenic infrastructure.
 
 This is complemented by R and GRASS GIS functions to perform similar analyses, organized within the `oneimpact` R package.  
 The package is available at: https://github.com/NINAnor/oneimpact.
