@@ -1,4 +1,4 @@
-## Estimating the cumulative impact and zone of influence from anthropogenic features on biodiversity
+## Code from "Estimating the cumulative impact and zone of influence from anthropogenic features on biodiversity"
 
 [![DOI](https://zenodo.org/badge/428984852.svg)](https://zenodo.org/badge/latestdoi/428984852)
 
