@@ -1,0 +1,437 @@
+\documentclass[titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel} 
+\usepackage{lineno, a4wide} % add line numbers
+\linenumbers
+\usepackage{setspace} % to use double spacing
+\doublespacing
+
+\usepackage{authblk} % author and affiliations
+\usepackage{amssymb, amsmath} % for math formulas
+\usepackage{bm}
+\usepackage{amsfonts} % blackboard math symbols
+\usepackage[round]{natbib} % citation format
+\usepackage{hyperref} % creates links in the document
+\usepackage{doi} % Create correct hyperlinks for DOI numbers
+\usepackage{times} %Select Adobe Times Roman (or equivalent) as default font
+
+\usepackage{graphicx} % handling figures
+\usepackage{subfig} % handling figures
+%\usepackage[nofiglist,figuresonly]{endfloat} % figures in the end
+\usepackage[disable]{endfloat} % figures in the end
+%\usepackage[nomarkers,figuresonly]{endfloat}
+\usepackage{enumitem} % Control layout of itemize, enumerate, description
+\usepackage{xcolor} % colored fonts
+
+\usepackage[colorinlistoftodos]{todonotes} % to do comments
+
+\usepackage{subfiles}
+\usepackage{parskip}
+\usepackage{multirow}
+\usepackage[para,online,flushleft]{threeparttable}
+\usepackage{rotating}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage[none]{hyphenat} % no hyphenation in the end of lines
+\usepackage[export]{adjustbox}[2011/08/13]
+\usepackage{bibentry}
+
+\newenvironment{poliabstract}[1]
+  {\renewcommand{\abstractname}{#1}\begin{abstract}}
+  {\end{abstract}}
+
+\title{
+Estimating the cumulative impact and zone of influence of anthropogenic features on biodiversity  \\
+{\normalsize Submitted to Methods in Ecology and Evolution}
+}
+
+% authors
+\author[1,2,*]{Bernardo Brandão Niebuhr}
+\author[1,*]{Bram Van Moorter} 
+\author[3]{Audun Stien}
+\author[4]{Torkild Tveraa}
+\author[1]{Olav Strand}
+\author[4]{Knut Langeland}
+\author[5]{Per Sandström}
+\author[6]{Moudud Alam}
+\author[2]{Anna Skarin}
+\author[1]{Manuela Panzacchi}
+
+% affiliation
+\affil[1]{Norwegian Institute for Nature Research (NINA), Trondheim, Norway}
+\affil[2]{Swedish University of Agricultural Sciences (SLU), Uppsala, Sweden}
+\affil[3]{The Arctic University of Norway (UiT), Tromsø, Norway}
+\affil[4]{Norwegian Institute for Nature Research (NINA), Tromsø, Norway}
+\affil[5]{Swedish University of Agricultural Sciences (SLU), Umeå, Sweden}
+\affil[6]{Dalarna University, Falun, Sweden}
+\affil[*]{Joint first authorship}
+
+\date{Running headline: Estimating cumulative impacts of human features \\
+Corresponding author: Bernardo Brandão Niebuhr \\Norwegian Institute for Nature Research, Postboks 5685 Torgarden, \\7485 Trondheim, Norway \\Contact: bernardo.brandao@nina.no, bernardo\_brandaum@yahoo.com.br \\ Word count: 8400 \\ \today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\begin{enumerate}
+
+    \item The concept of cumulative impacts is widespread in policy documents, regulations, and ecological studies, but quantification methods are still evolving. Infrastructure development usually takes place in landscapes with preexisting anthropogenic features. Typically, their impact is determined by computing the distance to the nearest feature only, thus ignoring the potential cumulative impacts of multiple features. We propose the \textit{cumulative ZOI approach} to assess whether and to what extent anthropogenic features lead to cumulative impacts.
+
+    \item The approach estimates both effect size and zone of influence (ZOI) of anthropogenic features and allows for estimation of cumulative effects of multiple features distributed in the landscape. First, we use simulations and an empirical study to understand under which circumstances cumulative impacts arise. Second, we demonstrate the approach by estimating the cumulative impacts of tourist infrastructure in Norway on the habitat of wild reindeer (\textit{Rangifer t. tarandus}), a nearly-threatened species highly sensitive to anthropogenic disturbance.
+
+    \item Simulations show that analyses based on the nearest feature and our cumulative approach are indistinguishable in two extreme cases: when features are few and scattered and their ZOI is small, and when features are clustered and their ZOI is large. Empirical analyses revealed cumulative impacts of private cabins and tourist resorts on reindeer, extending up to 10 and 20 km, with different decaying functions. Although the impact of an isolated private cabin was negligible, the cumulative impact of `cabin villages' could be much larger than that of a single large tourist resort. Focusing on the nearest feature only underestimates the impact of `cabin villages' on reindeer.
+
+    \item The suggested approach allows us to quantify the magnitude and spatial extent of cumulative impacts of point, linear, and polygon features in a computationally efficient and flexible way and is implemented in the \verb|oneimpact| R package. The formal framework offers the possibility to avoid widespread underestimations of anthropogenic impacts in ecological and impact assessment studies and can be applied to a wide range of spatial response variables, including habitat selection, population abundance, species richness and diversity, community dynamics, and other ecological processes.   
+    
+\end{enumerate}
+
+\textbf{Keywords:} Anthropocene, cumulative effects, distance-weighting, habitat loss, habitat selection, kernel density, \textit{Rangifer tarandus}, scale of effect
+
+\end{abstract}
+
+\begin{poliabstract}{Resumo}
+
+\begin{enumerate}
+
+    \item O conceito de impactos cumulativos é amplamente utilizado em políticas, documentos regulatórios e estudos ecológicos, mas os métodos para quantificá-los ainda estão se desenvolvendo. O desenvolvimento de infraestruturas frequentemente ocorre em paisagens com distúrbios antropogênicos pré-existentes. Geralmente, seu impacto é determinado computando-se a distância à infraestrutura mais próxima somente, ignorando o potencial impacto cumulativo de múltiplas infraestruturas. Aqui nós propomos a abordagem da ZdI cumulativa para avaliar se e em que medida múltiplas infraestruturas antropogênicas levam a impactos cumulativos.
+    
+    \item A abordagem estima tanto o tamanho do efeito como a zona de influência (ZdI) de infraestruturas antropogênicas e permite a estimação de efeitos cumulativos de múltiplos distúrbios distribuídos na paisagem. Primeiro, nós utilizamos simulações e um estudo empírico para compreendeer em quais condições os impactos cumulativos aparecem. Segundo, nós demonstramos a abordagem estimando os impactos de infraestruturas de turismo na Noruega no habitat de renas selvagens (\textit{Ranfiger t. tarandus}), uma espécie quase ameaçada e altamente sensível a distúrbios antrópicos.
+
+    \item As simulações mostraram que análises baseadas na infraestrutura mais próxima e a nossa abordagem cumulativa são indistinguíveis em dois casos extremos: quando as infraestruturas são poucas e esparsas e sua ZdI é pequena, e quando as infraestruturas estão agregadas e sua ZdI é grande. As análises empíricas revelaram impactos cumulativos de cabanas privadas e \textit{resorts} de turismo nas renas, extendendo-se até 10 e 20 km, seguindo diferentes funcões de decaimento. Enquanto o impacto de uma cabana privada isolada foi negligível, o impacto cumulativo de ``vilas de cabanas'' foi muito maior que o de \textit{resorts} turísticos sozinhos. Focar somente no efeito das infraestruturas mais próximas subestima o impacto de ``vilas de cabanas'' nas renas.
+
+    \item A abordagem aqui apresentada permite a quantifição da magnitude e extensão espacial dos impactos cumulativos de infraestruturas representadas como pontos, linhas, ou polígonos de uma maneira computacionalmente eficiente e flexível, implementada no pacote R \verb|oneimpact|. O arcabouço formal oferece a possibilidade de se evitar a subestimação de impactos antrópicos em estudos de impacto ambiental e estudos ecológicos, e pode ser aplicado a uma vasta gama de variáveis respostas incluindo seleção de habitat, abundância populacional, diversidade e riqueza de espécies, dinâmica de populações, e outros processos ecológicos.
+\end{enumerate}
+
+\textbf{Palavras-chave:} Antropoceno, efeitos cumulativos, ponderação pela distância, perda de habitat, seleção de habitat, densidade de kernel, \textit{Rangifer tarandus}, escala de efeito
+
+\end{poliabstract}
+
+\section{Introduction}
+
+Land use change and infrastructure development are increasing at an accelerating pace worldwide \citep{ibisch_global_2016,venter_sixteen_2016}, including all global biodiversity hotspots \citep{hu_overview_2021}, and are among the main causes of an unprecedented biodiversity decline \citep[][IPBES, 2019]{benitez-lopez_impacts_2010,newbold_global_2015}. Most infrastructure development takes place in areas already affected by multiple sources of disturbance \citep{barber_roads_2014} and, therefore, anthropogenic features are often clustered in the landscape. Understanding biodiversity responses to spatially co-occurring features is crucial to adequately assess their total impact. Indeed, the impact of new anthropogenic features might add and spatially interact to that of preexisting ones, leading to cumulative impacts larger than that of single features in isolation \citep[Box 1; ][]{naugle_unifying_2011}.  
+Adequately quantifying anthropogenic cumulative impacts is crucial to promote ecological sustainability in land planning, to prevent habitat loss, and to inform robust mitigation and offset measures \citep{gillingham_integration_2016, laurance_roads_2017}. Most environmental impact assessment studies focus on single infrastructure projects at small spatio-temporal scales \citep{johnson_regulating_2011}, and even broad-scale ecological studies typically consider only the impact of the nearest anthropogenic feature, thus ignoring cumulative impacts of multiple co-occurring features \citep[e.g.][]{torres_assessing_2016}. This however relies on the strong assumption that the impact is caused only by the anthropogenic feature closest to an species’ location, and co-occurring features have no additional impact. Although there have been efforts to better define, review, and outline cumulative impacts \citep{gillingham_integration_2016,naugle_unifying_2011}, we still lack a comprehensive theory and framework to understand and quantify cumulative impacts, and thus concretely help sustainable land use planning. This paper aims to take this process one step further by proposing the \textit{cumulative ZOI approach} to quantify the impact of multiple anthropogenic features on species, communities, and ecological processes.
+
+Anthropogenic features directly affect species in the area where they are physically present (e.g. through habitat loss or road kills), but their effect might also extend far beyond the features themselves, for instance by causing avoidance responses and reducing the probability of animal occurrence in their proximity \citep[][]{johnson_cumulative_2005,torres_assessing_2016}. On a broader landscape perspective, this can lead to the obstruction of movement or migration corridors, which in turn can prevent access to functional areas further away, with far reaching consequences for species distribution and population dynamics \citep[][in press]{panzacchi_predicting_2016,dorber_indicators_2023,van_moorter_defining_2021,van_moorter_accelerating_2023}. Therefore, two intrinsically related dimensions must be estimated in cumulative impact studies: the effect size of the impact and the size of the area affected \citep[Box 1; ][]{naugle_unifying_2011}. The \textit{effect size} indicates how strongly a feature influences the focal species or process, and it is generally estimated through a combination of biological and environmental data through statistical modeling \citep[Box 1;][]{polfus_identifying_2011}. The \textit{zone of influence} (ZOI) defines the area within which the impact of the feature is detectable, is commonly expressed using the radius of a circle with the feature in the origin, and delimits the area affected \citep[Box 1;][]{boulanger_estimation_2021,polfus_identifying_2011}. 
+
+The impact of co-occurring spatial features can accumulate over space (and time), as a linear or non-linear function of the impact of each individual feature. Such cumulative impacts are commonly appraised by reclassifying the features into larger units; for instance several point features representing buildings may be reclassified as a polygon representing an urban area, or several wind turbines as a wind park \citep{torres_assessing_2016}.
+For determining the ZOI, two approaches are typically used: either measuring the distance to the features or their density. The first framework focuses on the concept of ecological thresholds \citep[][]{ficetola_ecological_2009} and often estimates the ZOI by modelling the species’ response as a function of distance from disturbance using piecewise regression or other regression models \citep[e.g. exponential decay or generalized additive models;][]{ficetola_ecological_2009,skarin_out_2018}. This approach typically considers only the distance to the nearest feature and assesses ZOI thresholds only for one or a few types of anthropogenic feature \citep[e.g.][]{boulanger_estimation_2021}, since its computation requires repeated fitting and becomes impractical in a broader context \citep{lee_estimating_2020}. 
+
+The second approach estimates ZOI focusing on the spatial and temporal \textit{scales of effect} of the species-habitat relationships \citep[e.g.][]{zeller_multi-level_2017}. In this context, the number of features is averaged at several spatial extents \citep{moraga_scale_2019, laforge_process-focussed_2015}, creating a series of disturbance density maps \citep{mcgarigal_multi-scale_2016}. Each of these maps is tested against a biological response variable to assess the spatial scale at which the relationship is strongest, commonly through measures of model performance and explanatory power (such as R\textsuperscript{2}, AIC, or BIC, or through the fitted model coefficients; \citealt{huais_multifit_2018}).
+Multi-scale analyses brought important advances into spatial ecology and environmental impact studies \citep[e.g.][]{mcgarigal_multi-scale_2016}. However, these studies are rarely used in the context of cumulative impact assessments \citep[but see][]{polfus_identifying_2011}.
+
+Here, we propose the \textit{cumulative ZOI approach} to detect the occurrence of cumulative impacts on biological variables and to quantify them assuming additive effects of multiple features. In the approach, the zone of influence (ZOI) describes how the impact of a feature decreases with distance from the feature, and we use a model selection approach to determine a suitable functional form of the ZOI. The approach allows estimating the effect of both the nearest feature only, and of the cumulative impact of multiple features (Box 1, Fig. \ref{fig:ZOI_conceptual}). For simplicity, in this paper we focus on the impact of features of the same type, although the approach can be extended to different feature types. First, we perform simulations to illustrate the performance of each of these two metrics in explaining species’ responses to the same anthropogenic features under different spatial configurations i.e. scattered vs. clustered. Second, we demonstrate the approach by assessing the cumulative impact of private cabins and tourist resorts in Norway on the habitat selection of the tundra’s flagship species, reindeer. We developed the \verb|oneimpact| R package to allow implementation of the approach in R \citep{r_core_team_r_2020} and GRASS GIS \citep{grass_development_team_geographic_2017}. Given the occurrence of multiple anthropogenic features, the cumulative ZOI approach allows to: (i) evaluate whether there is evidence for cumulative impacts, or whether the impact of the nearest feature is sufficient to capture the species’ spatial response; (ii) quantify the cumulative impact; and (iii) estimate the ZOI and spatial decay function for multiple types of features. Although the approach was developed for infrastructure and anthropogenic disturbance factors, it can be used for any spatial predictor, including landscape and natural variables, and can be extended to many types of ecological responses, such as animal movement, species occurrence and abundance, and population fecundity and genetics \citep{panzacchi_predicting_2016, moraga_scale_2019, collevatti_multi-scale_2020}.
+
+\begin{tcolorbox}[width=1.3\textwidth,center,colback=yellow!5,colframe=yellow!75!black,title={Box 1 -- Definitions}]
+
+\begin{description}
+
+    \item[Impact] We use the term to describe the consequences of infrastructure, land use, human disturbance, and any spatial feature on a biological response variable, such as species’ occurrence, biodiversity, or ecological processes. Therefore, impacts represent the functional responses of species and processes to human activity \citep{naugle_unifying_2011}. We analytically decompose the impact $I$ into its \textbf{effect size $\beta$} and its spatial component, the \textbf{zone of influence (ZOI) $\phi$}, so that $I = \beta \cdot \phi$. A given anthropogenic feature (e.g. tourist cabin) might affect a certain process (e.g.  species occurrence) strongly or weakly ($\beta$), and this impact might decrease rapidly with distance or extend over several kilometers (ZOI, $\phi$).
+    
+    \item[Cumulative impacts] can result from the interaction between multiple features of a given type -- our focus here --, from the impact of different types of infrastructure (e.g. houses, turbines, roads, or dams) or from top-down or bottom-up ecological cascades. Cumulative impacts of multiple features depend on the number of features, their spatial distribution, configuration, and co-occurrence with other disturbance types, and might differ across species or processes, possibly leading to stronger impacts (negative or positive), if compared to the impact of a single isolated feature.
+    
+    \item[Effect sizes] express how strongly a given biological response is affected by a type of disturbance at the point in space where the disturbance is located. Here, the effect size is given by the estimated model coefficients $\beta$ (eq. \ref{eqn:HSF}).
+    
+    \item[Zone of Influence] The \textbf{ZOI} represents the function $\phi$ defining how the effect size of an anthropogenic feature changes with the distance, that is, it represents how the impact spreads throughout space. The ZOI might be any function $\phi(d, r)$ that assumes value 1 at the origin and decreases towards zero as the distance $d$ from the feature increases. The ZOI is defined by its \textbf{shape} and \textbf{radius \textit{r}}. The ZOI \textbf{shape} determines how $\phi$ decreases with distance, or whether it remains constant up to a threshold distance $r$ (see Fig. \ref{fig:ZOI_conceptual}A and Appendix A for examples). The ZOI \textbf{radius $r$} is the maximum distance from the feature where it affects a given biological response. For some shapes (e.g. threshold, linear decay) $r$ is the distance at which $\phi$ reaches zero (Fig. \ref{fig:ZOI_conceptual}A). For non-vanishing functions (e.g. Gaussian decay), a cutoff must be set to define $r$ -- e.g. the minimal distance where $\phi$ is below 0.05. 
+    While in landscape ecology the ZOI radius is often called the \textit{scale of effect} \citep[e.g.][]{moraga_scale_2019}, we refer to the ZOI radius to avoid confusion from different definitions of \textit{scale}.
+    
+    \item[ZOI metrics] When multiple features of an infrastructure are present, we can compute two ZOI metrics: the ZOI of the nearest feature only ($\phi_{nearest}$, eq. \ref{eqn:HSFnearest}) and the cumulative ZOI of multiple features ($\phi_{cumulative}$, eq. \ref{eqn:HSFcuminf}), which is the sum of the ZOI of each feature (Fig. \ref{fig:ZOI_conceptual}B). Each of these metrics is a different predictor, and the estimated ZOI is determined through statistical fitting and model selection.
+    
+\end{description}
+\end{tcolorbox}
+
+\section{Defining cumulative impact and ZOI for multiple features}
+
+Hereafter for simplicity we refer to \textit{infrastructure} or \textit{features} to refer to any spatial feature related to anthropogenic disturbance, including buildings (e.g. tourist areas), industrial areas (e.g. wind power), linear infrastructure (e.g. roads, hiking trails), land use practices, and human disturbance factors (e.g. tourist volume). To illustrate the approach, we also focus on infrastructure of the same type (e.g. cabins), although the approach can and should be extended to include different types of anthropogenic factors in an area. We first derive a metric to describe the impact of multiple anthropogenic features on a biological response variable. Despite the usefulness of the approach in different contexts (see Section 3), for illustration we use a habitat selection analysis, where the aim is to discriminate environmental conditions selected or avoided by animals based on ecological data (e.g. species’ occurrence or movements) and a use-availability design \citep{fieberg_how_2021}. The habitat selection function (HSF) $w(\textbf{X},\textbf{Z})$ is proportional to the probability of selection of a given resource unit, estimated from the frequency of used vs. available resource units. The HSF $w(\textbf{X},\textbf{E})$ is function of a matrix of spatial predictor variables describing infrastructure, $\textbf{X}$, for which we want to estimate the impact and ZOI, and a matrix of other environmental variables, $\textbf{E}$ (e.g. temperature, vegetation, altitude, or topography). In its parametric form, the HSF may be represented by
+
+\begin{equation}
+\centering
+\label{eqn:HSFgeneral}
+    w(\textbf{X},\textbf{E}) = \exp (\textbf{X} \bm{\beta} + \textbf{E} \bm{\alpha})
+\end{equation}
+
+where \bm{$\beta$} and \bm{$\alpha$} are vectors of coefficients for $\textbf{X}$ and $\textbf{E}$. The first term can be written in vector form as
+
+\begin{equation}
+\centering
+\label{eqn:HSF}
+    w(\textbf{X}) = \exp \left( \beta_0 + \overbrace{\beta_1 X_1}^\text{A) Infrastructure type 1} + \overbrace{\beta_2 X_2}^\text{B) Infrastructure type 2} + \underbrace{\beta_{12} X_1 X_2}_\text{D) Interaction infrastructure types 1 and 2} + ... + \overbrace{\beta_k X_k}^\text{C) Infrastructure type k} \right)
+\end{equation}
+
+where we define each term $I_k = \beta_k X_k$ as the \textit{impact} of a given anthropogenic feature of type k, and the impact is decomposed into its effect size $\beta_k$ and a spatial component $X_k$. In terms of ecological interpretation, $\exp(\beta_k)$ might be understood as the relative selection strength \citep{avgar_relative_2017}, and $\exp(I_k)$ as how this relative selection strength varies in space, for infrastructure type $k$ \citep{fieberg_how_2021}.
+
+In this formulation, \textit{the cumulative impact of different types of infrastructure} is given by the additive impacts of the $k$ infrastructure types (e.g. terms A, B, and C in equation \ref{eqn:HSF}) and possibly by interaction terms between variables (such as term D in equation \ref{eqn:HSF}, with an interaction coefficient $\beta_{12}$), that allows for non-linear, joint effects caused by the co-occurrence of different types of infrastructure. 
+
+In our definition of impact, $\beta$ and $X$ are independent and \textit{the cumulative impact of multiple features of the same type} is determined by the spatial component of the impact, $X$. We start by defining the ZOI as a function $\phi$, a curve that represents how the infrastructure impact changes with distance (Box 1). The ZOI of each anthropogenic feature may follow different shapes: it may be either constant (threshold ZOI) or decrease with distance (e.g. linear and Gaussian ZOI, Fig. \ref{fig:ZOI_conceptual}A). More broadly, $\phi = f(d, r)$ is any decay function that has a maximum value 1 where the feature is located and decreases toward zero as the Euclidean distance $d$ increases, and possibly vanishes at a given point, the ZOI radius $r$ (Box 1, Appendix A). Determining the ZOI shape and radius is an empirical problem \citep{miguet_how_2017}. The simplest assumption, widely used in the literature, is that all areas within the ZOI are affected equally \citep[a buffer zone around features; e.g][]{panzacchi_learning_2013}). However, it is likely more reasonable to consider a higher $\phi$ closer to the disturbances \citep[][]{skarin_out_2018, zeller_multi-level_2017}. When multiple features coexist in the same area, we can define two ZOI metrics: the ZOI based on the nearest feature alone, $\phi_{nearest}$, and the cumulative ZOI of multiple features, $\phi_{cumulative}$ (Box 1, Fig. \ref{fig:ZOI_conceptual}B). For instance, for $\phi_{nearest}$ the ZOI is assumed to be similar when approaching an isolated house and a small village, while for $\phi_{cumulative}$ the ZOI of nearby houses adds up and will be greater than the ZOI of a single isolated house (Fig. \ref{fig:ZOI_conceptual}B).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/F1_zoi_conceptual_new.png}
+\caption{\label{fig:ZOI_conceptual} Illustration of the ZOI of an anthropogenic feature in one dimensional space, using houses as example. (A) Examples of ZOI functions $\phi$ with different shapes of decay with distance from feature, $d$. A house has only influence within its ZOI radius (here $r = 3 \text{ km}$). For the threshold function, the influence remains constant within the ZOI and drops to zero beyond it, while for both the linear and the Gaussian functions it decreases monotonically for $d \leq r$. 
+(B) Representation of the ZOI of multiple houses considering only the nearest feature ($\phi_{nearest}$, upper row) or the cumulative ZOI of multiple features ($\phi_{cumulative}$, bottom row), for different shapes. If only the nearest house is considered, $\phi_{nearest}$ does not exceed one; when all houses act cumulatively, $\phi_{cumulative}$ can be higher than one.}
+\end{figure}
+
+To translate these measures into a mathematical form, we can decompose each of the impact terms (i.e. A, B, C, ...), in equation \ref{eqn:HSF}. Suppose that in the landscape there are $n_k$ features of type $k$, and let the ZOI of feature $i$ of type $k$ follow $\phi_{i,k} = f(d_{i,k}; r_k)$, where $d_{i,k}$ is the distance to feature ($i_k$) and $r_k$ is its ZOI radius. We can sum the effect of each feature so that the impact terms in equation \ref{eqn:HSF} become:
+
+\begin{equation}
+\label{eqn:HSFterm}
+    I_k = \beta_k X_k = \sum_{i=1}^{n_k} \beta_{i,k} \phi_{i,k}
+\end{equation}
+
+Typically, only the nearest feature is considered, which results in the implicit assumption that $\beta_i = 0$ for all but the nearest feature. Thus, eq. \ref{eqn:HSFterm} turns into:
+
+\begin{equation}
+\label{eqn:HSFnearest}
+\begin{split}
+    I_k & = \beta_{1,k} \cdot \phi_{1,k} = \beta_{1,k} \cdot \max_{i}\{\phi_{i,k}\} \\
+        & = \beta_{1,k} \cdot \phi_{nearest,k} 
+\end{split}                
+\end{equation}
+
+where $\phi_{nearest,k}$ is the ZOI of the nearest feature ($i = 1$) of type $k$ (see Fig. \ref{fig:ZOI_conceptual}B). However, a possibly more reasonable assumption would be that $\beta_{i,k} = \beta_{{(i+1)},k} = ... = \beta_k$, i.e. that all features of a given type have the same ZOI and all $\beta$'s are identical. Thus, eq. \ref{eqn:HSFterm} is reduced to:
+
+\begin{equation}
+\label{eqn:HSFcuminf}
+\begin{split}
+    I_k & = \beta_k \sum_{i=1}^{n_k} \phi_{i,k} \\
+        & = \beta_k \cdot \phi_{cumulative,k}
+\end{split}
+\end{equation}
+
+where $\phi_{cumulative,k} = \sum_{i} \phi_{i,k}$ is the cumulative ZOI metric and is proportional to 
+the `density' of features in space \citep[e.g.][]{panzacchi_searching_2015}. The cumulative ZOI metric is easily calculated using geographical information systems, e.g. through neighborhood analysis, and can be rescaled to meaningful scales, such as the number of houses per km\textsuperscript{2}. The same reasoning can be applied for variables represented as lines and polygons, such as roads, power lines, or mining sites; see the derivation of analogous equations in Appendix A.
+
+\section{Estimating the cumulative impact of multiple features}
+
+In the \textit{cumulative ZOI approach}, the calculation of the potential ZOI ($\phi$) is done before statistical analysis and $\phi$ based on different shapes and radii are considered as alternative predictor variables in a model of a biological response variable (Fig. \ref{fig:workflow}). Among multiple ZOI predictors, only one or a few may be selected as an estimated ZOI through statistical fitting. Therefore, assessing the cumulative impact of multiple features and identifying the ZOI shape and size has been recast as a model selection rather than a parameterization problem \citep[such as in][]{lee_estimating_2020}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.3\textwidth,center]{figures/F2_figure_workflow_v2.png}
+\caption{\label{fig:workflow} Workflow to calculate the ZOI $\phi$ and estimate the cumulative impact and ZOI radius of multiple infrastructure in the \textit{cumulative ZOI approach}, using the \texttt{oneimpact} R package. The \texttt{calc\_zoi} functions use raster data describing infrastructure locations as input to calculate $\phi_{nearest}$ and $\phi_{cumulative}$ based on arguments describing the ZOI expected shapes and radii. Each output raster, which describes the ZOI defined by specific shapes and radii, is considered a different covariate. The output rasters, together with other environmental data, are then annotated to biological data and are analyzed to estimate $\beta$ and $r$ for each type of disturbance and calculate their total impact $I$.}
+\end{figure}
+
+The \verb|oneimpact| R package \citep{niebuhr_oneimpact_2023} has been developed to calculate  $\phi_{nearest}$ and $\phi_{cumulative}$ through the \verb|calc_zoi| functions that allow for ZOI defined by decaying functions of different shapes and radii and use raster maps representing infrastructure or other spatial variables as input (Fig. \ref{fig:workflow}). Given spatially explicit biological data (e.g. species’ occurrence, abundance, or GPS positions of individuals), it is possible to spatially join the values of the ZOI (and, if relevant, of other environmental data) for all map pixels, thus producing a data set composed of biological response variables annotated with local and landscape-level predictors. The annotated data set is used to estimate the effect sizes $\beta$ and the estimated ZOI and to evaluate the cumulative effects for different types of disturbances through statistical fitting of eq. \ref{eqn:HSFgeneral} (Fig. \ref{fig:workflow}). In the \textit{cumulative ZOI approach}, the cumulative effect of multiple features is taken into account in the computation of the predictor ZOI variables. The approach is therefore applicable to a wide range of response variables and statistical modeling approaches. Therefore, the \textit{cumulative ZOI approach} is useful for inferring cumulative impacts for a wide set of biotic or abiotic variables \citep[similar to][]{lowe_scalescape_2022} related to different ecological processes (see Appendix B for examples).
+Similarly, when estimating the form and radius of $\phi$, the approach can make use of more traditional model selection \citep{burnham_model_2002,huais_multifit_2018}, penalized regression \citep{lee_estimating_2020}, or machine learning approaches \citep{pichler_machine_2022}, with different sampling designs and assumptions to account for spatial and temporal autocorrelation \citep[see][]{northrup_conceptual_2022}. A comprehensive review of such procedures is beyond the scope of this paper, but below we provide an example using model selection through AIC. Vignettes illustrating the \verb|oneimpact| R package and the workflow in Fig. \ref{fig:workflow} are provided in \url{https://ninanor.github.io/oneimpact/articles/}.
+
+\section{When do $\phi_{nearest}$ and $\phi_{cumulative}$ represent similar spatial variation?}
+
+To correctly interpret $\phi_{nearest}$ and $\phi_{cumulative}$ it is important to understand under which conditions these two metrics are expected to represent similar gradients of spatial variation, and to be \textit{de facto} equivalent. Similarities between the two variables depend on the spatial distribution of features as well as their ZOI, and might affect our ability to distinguish among their impacts. We simulated a set of landscapes ($30 \times 30$ km\textsuperscript{2}, 100m resolution) with a constant number of point features ($n = 100$) distributed according to different spatial patterns: regular, random, and clustered (Fig. \ref{fig:simulated_landscapes}; Appendix C). For each landscape we calculated $\phi_{nearest}$ and $\phi_{cumulative}$ assuming a range of ZOI radii (from 0.06\% to 40\% of the landscape extent), using a linear decay ZOI function (Fig. \ref{fig:ZOI_conceptual}). We then compared the resulting spatial patterns of $\phi_{nearest}$ and $\phi_{cumulative}$ through Pearson correlation of the values of the two metrics at the same coordinates. 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.3\textwidth,center]{figures/F3_simulated_landscapes.png}
+\caption{\label{fig:simulated_landscapes} Representation of the ZOI of the nearest feature ($\phi_{nearest}$) and the cumulative ZOI ($\phi_{cumulative}$) in landscapes with point infrastructure spatially distributed in a gradient of clustering, from (A) a regular distribution to (B) a set of clusters to (C) only one cluster. 
+The central panel illustrates $\phi_{nearest}$ (left) and $\phi_{cumulative}$ (right) when the ZOI radius $r = 10\%$ (3km) of the extent of the landscape. The lower panel shows the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ in each landscape, as the ZOI radius $r$ increases. The dashed vertical lines show half the minimum distance between features (black), beyond which the ZOI of multiple features overlaps, and the size of the feature clusters (grey), beyond which the correlation stops decreasing.}
+\end{figure}
+
+When the minimum distance between features is greater than $2r$, $\phi_{nearest}$ and $\phi_{cumulative}$ are identical (Fig. \ref{fig:simulated_landscapes}, black dashed vertical line; $\text{correlation} = 1$). This is because the ZOI of each feature is too restricted to overlap. When the ZOI radius increases, the effect of nearby features accumulate and the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ decreases (Fig. \ref{fig:simulated_landscapes}A,B, Figs C5 and C8). In addition, as the features get more aggregated (up to a limit with a single small cluster, Fig. \ref{fig:simulated_landscapes}C), the correlation between $\phi_{nearest}$ and $\phi_{cumulative}$ goes through a point of inflection as the ZOI expands, beyond which it increases with $r$ (Figs C5D-F). The point where the correlation stops decreasing is related to the size of the clusters (grey dashed vertical line in Figs. \ref{fig:simulated_landscapes}B,C). For ZOI radii larger than the radius of the cluster, $\phi_{nearest}$ and $\phi_{cumulative}$ converge again 
+and it may be hard to distinguish between the effect of each feature alone, regardless of the ZOI metric. At this point, the effect of a collection of features transforms into that of a `super-feature' (e.g. urban areas instead of houses, wind parks instead of wind turbines). 
+
+\section{Empirical demonstration: Impact of tourist infrastructure on reindeer habitat}
+
+\subsection{Materials and methods}
+
+We evaluated the impact of tourist infrastructure on habitat selection of the Hardangervidda reindeer population in Norway during summer (Fig. \ref{fig:prediction_maps}). The Norwegian populations represent the last remaining wild mountain reindeer in Europe and are highly sensitive to human activities. In summer, their habitat is visited by tourists and hikers, and the area contains 14,154 private cabins, 26 large tourist cottages, and hundreds of kilometers of trails, in addition to other infrastructure (Fig. D2). We used GPS-tracking data from 115 female reindeer collected in the period of 1 July - 15 August 2001-2019 \citep[see][]{panzacchi_searching_2015}. Habitat selection was estimated using HSF in a use-availability setup, where each GPS location was compared with nine available random locations within the area (Fig. \ref{fig:prediction_maps}). All locations were annotated with environmental covariates (Fig. \ref{fig:workflow}).
+
+To account for bioclimatic and geographical variations we used the four first components from a principal component (PC) analysis \citep{bakkestuen_step-less_2008}. They correspond to gradients of (1) PC1 - continentality, (2) PC2 - altitude, (3) PC3 - terrain ruggedness, and (4) PC4 - solar radiation. We included a quadratic term for PC1 and PC2 to account for niche `optima' \citep[\textit{sensu}][]{panzacchi_searching_2015}. We also used a satellite-based land cover map with 25 vegetation classes, which were reclassified into 12 classes (Table D2). In this paper our aim was to illustrate the novel \textit{cumulative ZOI approach}, and we thus needed to keep model fitting relatively simple, avoiding correlation between covariates. Therefore, we estimated the cumulative impact of only two of the main anthropogenic variables that occur in the core of the area inhabited by reindeer: private cabins and large tourist resorts. Note, however, that other infrastructure are present especially at the fringes of the study areas, and a proper assessment of the cumulative impact of all human activities on reindeer in Hargandervidda should account for all these anthropogenic variables (see Panzacchi et al., 2015).
+
+For the raster layers describing private cabins and tourist resorts, we calculated both  $\phi_{nearest}$ and $\phi_{cumulative}$ for a set of radii between 100m and 20,000m using the \verb|calc_zoi()| functions of the \verb|oneimpact| package (Fig. \ref{fig:workflow}). For each infrastructure, we tested which of these four decaying functions best described the ZOI: threshold, linear decay, Gaussian decay, and exponential decay (Appendix A). To estimate reindeer habitat selection, we fitted HSFs (eq. \ref{eqn:HSF}) using binomial generalized linear models \citep{fieberg_how_2021} with used and available locations as response and infrastructure, land cover, and bioclimatic variables as fixed effects. Model fitting consisted of two steps. We first fitted single-infrastructure models using a variable selection procedure \citep{burnham_model_2002} to find the most likely ZOI (shape, radius) for each infrastructure type. Single-infrastructure HSFs were fitted using the \verb|multifit| function in R \citep{huais_multifit_2018} and compared using AIC. Second, using the most likely ZOI from single-infrastructure models, we fitted multi-infrastructure HSF to assess the combined impacts of multiple types of infrastructure, as in \citet{laforge_process-focussed_2015}. To quantify the impact of infrastructure, we applied eq. \ref{eqn:HSFterm} using the $\beta$ and $\phi$ estimated from the model with the lowest AIC. We then estimated habitat suitability by predicting the HSF (eq. \ref{eqn:HSF}) over the study area and rescaling the predicted values to the interval [0, 1]. For details on data, environmental covariates, modeling, and results, see Appendix D.
+
+\subsection{Results}
+
+Overall, single- and multi-infrastructure models including $\phi_{cumulative}$ performed much better than models including $\phi_{nearest}$ (Table D2). This presents strong evidence that the impact of private cabins and of tourist resorts accumulates over reindeer habitat, inducing the species to avoid these infrastructure types to a far larger degree when these infrastructures are clustered, as compared to when they are spaced far apart in the landscape. The most plausible model that included $\phi_{nearest}$ was ranked in the 26\textsuperscript{th} position in the model selection results ($\Delta AIC = 921$), and the most likely model that included the log-distance to the nearest feature was ranked 44\textsuperscript{th} ($\Delta AIC = 1197$, Table D2). Interestingly, the most parsimonious model showed private cabins exerted a constant cumulative impact within a threshold ZOI of 10 km, while large tourist resorts followed an exponentially decaying cumulative ZOI with 20 km radius (Fig. \ref{fig:impact_plot}; Table D2). 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1\textwidth,center]{figures/F4_reindeer_ZOI_impact_single_multiple_features.png}
+\caption{\label{fig:impact_plot} Impact of private cabins and public resorts considering (A) only 1 feature and (B) the maximum number of features of each type of infrastructure in the study area (2664 for cottages, 5 for cabins). The impact is the product of the effect size ($\beta$) and the cumulative zone of influence ($\phi_{cumulative}$). While the impact of one isolated private cabin is negligible (A), at their maximum densities the cumulative impact of “cabin villages” is higher than that of large tourist resorts (B).}
+\end{figure}
+
+The estimated effect size of a single private
+cabin ($\beta_{cabin} = -0.0081$) was much smaller than that of a single tourist resort
+($\beta_{resort} = -2.654$; Fig. \ref{fig:impact_plot}A, Table D3), as each private cabin is used by far fewer people (typically a family) compared to the tourist resorts (often used by hundreds of people). However, since private cabins can occur at higher densities in popular `cabin villages', in some areas their impact is larger than that of a tourist resort. In the areas with the highest density of infrastructure in Hardangervidda -- with 2664 private cabins and 5 tourist resorts -- the impact of 
+private cabin clusters is nearly twice that of tourist resorts
+(Figs \ref{fig:impact_plot}B and 5). Following the interpretation of HSF coefficients from \citet{fieberg_how_2021}, other conditions being constant, an addition of 330 private cabins (within 10 km) makes an area avoided by reindeer 14.4 times more strongly, what is nearly the same difference in avoidance a reindeer presents among two areas that differ in 1 tourist resort (within 20 km; Appendix D).
+
+We predicted the cumulative impact of infrastructure in space by multiplying the effect size and $\phi_{cumulative}$ (eq. \ref{eqn:HSFcuminf}). While the impact of private cabins rises 20 times in areas with the highest density of cabins, it does not increase more than 10 times for tourist resorts (Fig. \ref{fig:prediction_maps}). Due to the combined impact of infrastructure, and since reindeer
+avoided high densities of both infrastructure types at relatively large extents, 
+areas of high habitat suitability for reindeer corresponded to those in which the
+cumulative impact of both infrastructure is low, which matches the
+locations used by reindeer, indicated through the GPS data (Fig. \ref{fig:prediction_maps}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.3\textwidth,center]{figures/F5_reindeer_results_prediction_maps.png}
+\caption{\label{fig:prediction_maps} Maps illustrating the most parsimonious models for the estimated cumulative ZOI of private cabins (A, threshold model with 10km radius) and tourist resorts (B, exponential decay with 20km radius) and their estimated impacts (D, E) on reindeer habitat selection (F). These maps are shown alongside the GPS locations of reindeer during summer in the Hardangervidda wild reindeer area (C) and the predicted habitat suitability for reindeer, based on both the impact of cabins and cottages, as well as other environmental variables (F).}
+\end{figure}
+
+\section{Discussion}
+
+There is an urge to correctly estimate and inform scientists, decision makers, and citizens about the past, current, and future impact of global land use changes on biodiversity  \citep{laurance_conservation_2018}. Most decisions and regulations related to land use change are carried out with little statistical knowledge about cumulative impacts on ecosystems and species they affect \citep{johnson_regulating_2011,laurance_roads_2017}. Building upon previous frameworks \citep{naugle_unifying_2011} and concepts from landscape ecology literature to measure the ZOI of the nearest and of multiple features ($\phi_{nearest}$ and $\phi_{cumulative}$), the \textit{cumulative ZOI approach} provides tools to estimate such cumulative impacts on biodiversity. 
+
+Using simulations, we show that estimates based on nearest feature and cumulative impacts will be indistinguishable (i.e. $\phi_{nearest}$ and $\phi_{cumulative}$ are equivalent) in two extreme cases: (i) when features are distant in relation to the radius of their ZOI, they are too spaced for their impacts to accumulate; (ii) when features are highly clustered, they act as `super-features' and the estimated ZOI will be large (e.g. building a new house increases the impact of an urban area little). In intermediate cases, which are common in real landscapes, cumulative impacts may be expected and should be accounted for. Although for illustrative purposes we focus here on the impact of two types of infrastructure on species’ habitat use, the approach is easily extended to cumulative impacts of and the full set of spatial features that affect a focal ecological process.
+
+\subsection{Applying the \textit{cumulative ZOI approach} to assess impacts and habitat loss}
+
+Our empirical demonstration strongly supports the hypothesis of cumulative impacts of both private cabins and of tourist resorts on reindeer habitat use, with a ZOI of 10 and 20 km, respectively. These estimates fit with our knowledge of the distances typically covered by hikers relying upon their private cabins for day trips, and by tourists hikes from one tourist resort to another in multi-day trips. Our results show that while the impact of a single cabin is smaller than that of a tourist resort, the impact of several cabins, or cabin villages, can be far larger than that of a tourist resort (Figs \ref{fig:impact_plot}, \ref{fig:prediction_maps}, D5). Similar results reporting a high impact of tourism and large ZOI for tourist facilities have been identified in a large number of studies with a variety of study designs over the last decades \citep{gundersen_large-scale_2019,panzacchi_searching_2015,panzacchi_predicting_2016,panzacchi_wild_2022,polfus_identifying_2011,nellemann_winter_2001,nellemann_effects_2010}. It should be highlighted that the main aim of this study is to present the novel \textit{cumulative ZOI approach}, and therefore we chose to minimize the landscape complexity and ignore a wide range of infrastructures known to impact reindeer habitat use, including trails, roads, railways, hydropower etc. The estimated impact of tourism presented here should therefore be considered as realistic, but indicative, as more precise estimates useful in applied contexts require considering also other anthropogenic features in the landscape \citep[see e.g.][]{panzacchi_searching_2015,panzacchi_wild_2022}. Specifically, accounting for other features correlated in space with private cabins and tourist resorts may reduce the ZOI estimated for these infrastructures.   
+
+Importantly, all our cumulative ZOI models ($\phi_{cumulative}$) had far more empirical support than models using nearest features ($\phi_{nearest}$). This suggests that models that consider the impact of the nearest feature only will often limit our understanding of the cumulative consequences of land use changes on biodiversity. The cumulative ZOI approach is a tool that helps analysts overcome this methodological limitation, and we believe will contribute to a more robust estimation of the impact of anthropogenic features and activities on ecological processes.
+
+Studies measuring either distance or density of infrastructure are widespread in the literature, spanning movement ecology \citep{zeller_multi-level_2017}, species distribution models \citep{panzacchi_searching_2015}, population dynamics \citep{moraga_scale_2019}, landscape genetics \citep{collevatti_multi-scale_2020}, species diversity and habitat models \citep{ficetola_ecological_2009}, ecological interactions \citep{marjakangas_fragmented_2020}, and assessment of abiotic conditions \citep[][Appendix B]{liu_impacts_2018}. However, in most cases, only one of the ZOI metrics was chosen to represent the effect of spatial features. Our approach allows flexible modelling of the ZOI for each type of feature and focal biological response variable. Furthermore, the method can and should be extended to estimate cumulative impacts of all anthropogenic features on focal species and ecological processes and is a crucial step towards comprehensive indicators of anthropogenic impacts.
+
+The impact of anthropogenic features, such as infrastructure, is often assessed using study designs with some form of temporal or spatial replication. Examples of study designs with temporal replication are before-after or before-after-control designs that compare biological responses before and after the feature enters the landscape \citep{boulanger_estimation_2021,skarin_out_2018,dorber_indicators_2023}. Although these studies mimic experimental designs under controlled conditions, this assumption is rarely met in real landscapes, where many environmental variables may change simultaneously. In addition, the temporal replication of data both before and after tend to limited, allowing for little understanding of yearly variations and how anthropogenic features affect this variability. Other studies focus on spatial replications and study the response of species to different anthropogenic features across a wide range of environmental conditions. In such studies, features may be isolated in some areas and aggregated in other areas, and landscape covariates are more likely to vary independently of the distribution of anthropogenic features. This design may help disentangle the effect of spatially correlated features and assess their average impact on ecological processes \citep[e.g.][]{panzacchi_searching_2015}, including on the species’ functional habitat networks (Van Moorter, in press). However, this spatial design is data demanding. Irrespective of the approach chosen to assess the impact of anthropogenic features, the \textit{cumulative ZOI approach} offers a tool for understanding how the type and spatial configuration of features can lead to cumulative impacts and shape species’ spatial responses. Regardless of the study approach, investigating the occurrence of cumulative impacts is of paramount importance to avoid severe underestimations of habitat loss. 
+
+\subsection{Assumptions, advantages, and limitations of the approach}
+
+The ZOI of anthropogenic features has been defined in different ways across studies, leading to different estimates and interpretations. Traditional studies used either a static, predefined buffer radius for each type of disturbance \citep{polfus_identifying_2011}, or post hoc analyses to define the ZOI after HSF fitting \citep{johnson_cumulative_2005,plante_human_2018}. The \textit{cumulative ZOI approach} proposed here consists of a model- and data-driven inference, which makes it robust and useful beyond the context of habitat use models, and particularly relevant in applied contexts where the ZOI differ for different ecological responses \citep{moraga_scale_2019}. Importantly, it also allows the incorporation of uncertainty in the estimation of the ZOI, e.g. by computing confidence intervals through bootstrapping \citep{boulanger_estimation_2021,moraga_scale_2019}.
+
+It is worth noting that when functions of different shapes are chosen for modelling the ZOI, they imply different distribution of impacts inside the radius of the ZOI. In our example, the ZOI of private cabins indicated a homogeneous effect within an area with 10km radius (threshold function), while the impact of tourist resorts decayed exponentially within a 20 km ZOI radius. The latter implied that the impact decreases to half of its maximum value already 5 km from the feature (Fig. \ref{fig:impact_plot}, Appendix A). Along the same lines, in a study of bird and insect abundances, Miguet et al. (2017) showed that the area affected by landscape variables can increase by a factor of 5 when using a distance-weighted influence measure (as used for tourist resorts in our example), in comparison to a threshold-based landscape measure (as used for private cabins in our example). We also note that the estimated values for $\beta$ and ZOI radius can differ substantially between $\phi_{nearest}$ and $\phi_{cumulative}$, depending on the spatial distribution of features. In our example, private cabins were abundant, the estimated ZOI radius for $\phi_{cumulative}$ was 10 km and the effect size was small (Fig. D3), while the ZOI radius for $\phi_{nearest}$ was only 1 km and the effect size was orders of magnitude higher (Fig. D3). However, such a difference in parameter estimates for $\phi_{cumulative}$ and $\phi_{nearest}$ was not observed for tourist resorts, which are scarce and sparsely distributed in the study area (Fig. D4).
+
+In the \verb|oneimpact| R package, the ZOI metrics are calculated before model fitting (Fig. \ref{fig:workflow}). Here lies one of the main advantages of the approach – by precomputing the layers describing the cumulative impact of multiple features, we avoid the need for tedious iterative model fitting and complex estimation of parameters of nonlinear functions \citep{lee_estimating_2020,lowe_scalescape_2022}. This facilitates the estimation of the ZOI for different feature types and eases model fitting for large datasets \citep[e.g.][]{tucker_moving_2018} encompassing large study areas and fine-resolution spatial covariates. We believe that this makes the approach suitable for a wide range of ecological responses and study designs. 
+
+Our formulation of $\phi$ implies two main assumptions. First, for simplicity, the ZOI of each feature is assumed to be the same regardless of the density of points in an area. However, it may be more realistic to assume that the ZOI of a single or few features is smaller than that of a high-density cluster of features; for example, popular areas with clusters of tourist cabins are expected to be used by more people and potentially impact a wider area. Analogous calculations with variable radii have been implemented for decades in adaptive kernel density estimation \citep{worton_kernel_1989}, so our assumption can in principle be relaxed, and we encourage future developments in this direction to increase the local relevance of large-scale cumulative impact studies. Second, for simplicity, our formulation represents two extreme cases where either the nearest feature is the only one influencing the focal ecological process ($\beta_i = 0$ for $i > 1$ in $\phi_{nearest}$), or all features affect the process equally ($\beta$ is constant over all features in $\phi_{cumulative}$). More complex and realistic formulations could be derived extending eq. \ref{eqn:HSFterm} to bridge the gap between the two extreme cases described above. Also, in principle, both $\phi_{nearest}$ and $\phi_{cumulative}$ can be included in the same statistical model, with the effect size estimated for each variable and a composite, cumulative impact inferred by combining the estimates.
+
+\section{Conclusions}
+
+The cumulative impact of multiple anthropogenic drivers is a major cause of the current unprecedented nature decline, with 75\% of the land being significantly impacted, and 1 million species threatened with extinction (IPBES, \citeyear{diaz_ipbes_2019}). However, comprehensive and robust scientific frameworks to study cumulative impacts are still under development, often leading cumulative impact assessments to the initiative of the analysts or impact assessors \citep{johnson_regulating_2011}. There is an urgent need to include more precise estimates of cumulative impacts in environmental impact assessments, sustainable land planning, and ecological studies. The \textit{cumulative ZOI approach} takes this research field a step further and provides a framework to detect and estimate the magnitude and spatial extent of cumulative impacts of multiple spatial features in a wide range of ecological studies. The formulation presented here can be used to model cumulative impacts of anthropogenic features not only on species’ habitat selection, but on virtually all spatially explicit response variables, including population abundance \citep[e.g.][]{benitez-lopez_impacts_2010}, species richness \citep[e.g.][]{ficetola_ecological_2009}, measures of biological diversity, community dynamics, and ecological processes such as movements. Therefore, the \textit{cumulative ZOI approach} offers an opportunity to counter the widespread underestimation of the total impact of co-occurring anthropogenic disturbance factors in ecology, impact assessment, and land use planning.
+      
+\section*{Acknowledgements}
+
+We thank C. Johnson for discussions on cumulative impact concepts, P.G. Blackwell for inputs on the equation notation, P. Dodonov, M.H. Vancine, and J. Nowosad for discussion around the implementation of ZOI metrics in R, F. Frassinelli for Github support, R. Muylaert, M. Grainger, the editor N. Cooper, and three anonymous reviewers for a critical review of the text, and E. Gurarie for the incentive and teachings on how to build an R package. We are grateful to several local projects allowing us to collect reindeer GPS data in Norway in the past decades and for NINA staff for managing them. The work presented here is the result of large research projects supported by the Research Council of Norway: OneImpact (n. 287925), RenewableReindeer (n. 243746), ProdChange (n. 255635), and GreenPlan (n. 326979). BBN, AS, PS, and MA were also supported by a grant from the Swedish Energy Agency within the research programme Vindval (grant n. 46780-1) and by project MineDeer (Vinnova project n. 2019-05191). PS thanks EU Horizon 2020 project ArcticHubs (grant n. 586 869580).
+
+\section*{Conflicts of Interest}
+
+The authors declare no conflicts of interest.
+
+\section*{Authors’ contributions}
+
+Bernardo Brandão Niebuhr, Bram van Moorter, and Manuela Panzacchi conceived the idea and designed the methods, with contributions from Torkild Tveraa, Audun Stien, Moudud Alam, Per Sandstrõm, and Anna Skarin; Bernardo Brandão Niebuhr, Bram van Moorter, Manuela Panzacchi, Torkild Tveraa, Knut Langeland, and Olav Strand collected and provided the data; Bernardo Brandão Niebuhr and Bram van Moorter wrote the R code; Bernardo Brandão Niebuhr, Bram van Moorter, and Manuela Panzacchi analyzed the data and interpreted the results; Bernardo Brandão Niebuhr and Bram van Moorter led the writing of the manuscript. All authors contributed critically to discussions and to the drafts, and gave final approval for publication.
+
+\section*{Data availability statement}
+
+GPS data is archived in Movebank (www.movebank.org) and can be accessed upon request. All environmental data was retrieved from public repositories. The \verb|oneimpact| package is open and available at \url{https://github.com/NINAnor/oneimpact} \citep{niebuhr_oneimpact_2023}, and all scripts used in the analyses are available in the Github repository \url{https://github.com/bniebuhr/cumulative_zoi_paper}.
+
+\section*{Supplementary Material}
+
+Appendix A. Defining and deriving the zone of influence for multiple infrastructure features \\
+Appendix B. Applying the cumulative zone of influence approach to ecological studies \\
+Appendix C. Comparing the zone of influence of the nearest feature with the cumulative zone of influence of multiple features \\ 
+Appendix D. Cumulative impacts of infrastructure on reindeer space use: fitting habitat selection models
+
+\bibliographystyle{besjournals}
+%\bibliography{cumZOI_bib}
+\nobibliography{cumulative_zoi_paper.bib}
+
+\section*{References}
+
+Avgar, T., Potts, J. R., Lewis, M. A., & Boyce, M. S. (2016). Integrated step selection analysis: Bridging the gap between resource selection and animal movement. Methods in Ecology and Evolution, 7(5), 619–630. https://doi.org/10.1111/2041-210X.12528
+
+Bakkestuen, V., Erikstad, L., & Halvorsen, R. (2008). Step-less models for regional environmental variation in Norway. Journal of Biogeography, 35(10), 1906–1922. https://doi.org/10.1111/j.1365-2699.2008.01941.x
+
+Barber, C. P., Cochrane, M. A., Souza, C. M., & Laurance, W. F. (2014). Roads, deforestation, and the mitigating effect of protected areas in the Amazon. Biological Conservation, 177, 203–209. \\  https://doi.org/10.1016/j.biocon.2014.07.004
+
+Benítez-López, A., Alkemade, R., & Verweij, P. A. (2010). The impacts of roads and other infrastructure on mammal and bird populations: A meta-analysis. Biological Conservation, 143(6), 1307–1316.\\ https://doi.org/10.1016/j.biocon.2010.02.009
+
+Boulanger, J., Poole, K. G., Gunn, A., Adamczewski, J., & Wierzchowski, J. (2021). Estimation of trends in zone of influence of mine sites on barren-ground caribou populations in the Northwest Territories, Canada, using new methods. Wildlife Biology, 2021(1). https://doi.org/10.2981/wlb.00719
+
+Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel inference: A practical information-theoretic approach (2nd ed). Springer.
+
+Collevatti, R. G., dos Santos, J. S., Rosa, F. F., Amaral, T. S., Chaves, L. J., & Ribeiro, M. C. (2020). Multi-Scale Landscape Influences on Genetic Diversity and Adaptive Traits in a Neotropical Savanna Tree. Frontiers in Genetics, 11. https://www.frontiersin.org/articles/10.3389/fgene.2020.00259
+
+Dorber, M., Panzacchi, M., Strand, O., & Van Moorter, B. (2023). Indicators of habitat functionality reveal significant underestimations in SDG trade-off risk—The case of wild reindeer and hydropower development. Ambio, 52, 757–768. https://doi.org/10.1007/s13280-022-01824-x
+
+Ficetola, G. F., & Denöel, M. (2009). Ecological thresholds: An assessment of methods to identify abrupt changes in species–habitat relationships. Ecography, 32(6), 1075–1084.\\ https://doi.org/10.1111/j.1600-0587.2009.05571.x
+
+Fieberg, J., Signer, J., Smith, B., & Avgar, T. (2021). A ‘How to’ guide for interpreting parameters in habitat‐selection analyses. Journal of Animal Ecology, 90(5), 1027–1043.\\ https://doi.org/10.1111/1365-2656.13441
+
+Gillingham, M. P., Halseth, G. R., Johnson, C. J., & Parkes, M. W. (Eds.). (2016). The Integration Imperative: Cumulative environmental, community and health effects of multiple natural resource developments. Springer International Publishing. https://doi.org/10.1007/978-3-319-22123-6
+
+GRASS Development Team. (2017). Geographic Resources Analysis Support System (GRASS GIS) Software, Version 7.8. Open Source Geospatial Foundation. http://grass.osgeo.org
+
+Gundersen, V., Vistad, O. I., Panzacchi, M., Strand, O., & van Moorter, B. (2019). Large-scale segregation of tourists and wild reindeer in three Norwegian national parks: Management implications. Tourism Management, 75, 22–33. https://doi.org/10.1016/j.tourman.2019.04.017
+
+Hu, X., Huang, B., Verones, F., Cavalett, O., & Cherubini, F. (2021). Overview of recent land‐cover changes in biodiversity hotspots. Frontiers in Ecology and the Environment, 19(2), 91–97. \\ https://doi.org/10.1002/fee.2276
+
+Huais, P. Y. (2018). multifit: An R function for multi-scale analysis in landscape ecology. Landscape Ecology, 33(7), 1023–1028. https://doi.org/10.1007/s10980-018-0657-5
+
+Ibisch, P. L., Hoffmann, M. T., Kreft, S., Pe’er, G., Kati, V., Biber-Freudenberger, L., DellaSala, D. A., Vale, M. M., Hobson, P. R., & Selva, N. (2016). A global map of roadless areas and their conservation status. Science, 354(6318), 1423–1427. https://doi.org/10.1126/science.aaf7166
+
+IPBES (2019). Summary for policymakers of the global assessment report on biodiversity and ecosystem services of the Intergovernmental Science-Policy Platform on Biodiversity and Ecosystem Services. Díaz, S., Settele, J., Brondízio, E. S., Ngo, H. T., Guèze, M., Agard, J., Arneth, A., Balvanera, P., Brauman, K. A., Butchart, S. H. M., Chan, K. M. A., Garibaldi, L. A., Ichii, K., Liu, J., Subramanian, S. M., Midgley, G. F., Miloslavich, P., Molnár, Z., Obura, D., … Zayas, C. N. (Eds.). IPBES secretariat,  Bonn, Germany. 56 pages.
+
+Johnson, C. J. (2011). Regulating and planning for cumulative effects: The Canadian experience. In P. R. Krausman & L. K. Harris (Eds.), Cumulative effects in wildlife management: Impact mitigation (1st ed., pp. 29–46). CRC Press.
+
+Johnson, C. J., Boyce, M. S., Case, R. L., Cluff, H. D., Gau, R. J., Gunn, A., & Mulders, R. (2005). Cumulative effects of human developments on Arctic wildlife. Wildlife Monographs, 160, 1–36.
+
+Johnson, C. J., & St-Laurent, M.-H. (2011). Unifying Framework for Understanding Impacts of Human Developments on Wildlife. In D. E. Naugle (Ed.), Energy Development and Wildlife Conservation in Western North America (pp. 27–54). Island Press/Center for Resource Economics.\\ https://doi.org/10.5822/978-1-61091-022-4_3
+
+Laforge, M. P., Vander Wal, E., Brook, R. K., Bayne, E. M., & McLoughlin, P. D. (2015). Process-focussed, multi-grain resource selection functions. Ecological Modelling, 305, 10–21.\\ https://doi.org/10.1016/j.ecolmodel.2015.03.003
+
+Laurance, W. F. (2018). Conservation and the Global Infrastructure Tsunami: Disclose, Debate, Delay! Trends in Ecology & Evolution, 33(8), 568–571. https://doi.org/10.1016/j.tree.2018.05.007
+
+Laurance, W. F., & Arrea, I. B. (2017). Roads to riches or ruin? Science, 358(6362), 442–444. \\
+https://doi.org/10.1126/science.aao0312
+
+Lee, Y., Alam, M., Sandström, P., & Skarin, A. (2020). Estimating zones of influence using threshold regression. Working Papers in Transport, Tourism, Information Technology and Microdata Analysis, 2020:01, 1–16.
+
+Liu, Z., & Yang, H. (2018). The impacts of spatiotemporal landscape changes on water quality in Shenzhen, China. International Journal of Environmental Research and Public Health, 15(5), 1038. https://doi.org/10.3390/ijerph15051038
+
+Lowe, E. B., Iuliano, B., Gratton, C., & Ives, A. R. (2022). ‘Scalescape’: An R package for estimating distance-weighted landscape effects on an environmental response. Landscape Ecology, 37(7), 1771–1785. https://doi.org/10.1007/s10980-022-01437-5
+
+Marjakangas, E., Abrego, N., Grøtan, V., Lima, R. A. F., Bello, C., Bovendorp, R. S., Culot, L., Hasui, É., Lima, F., Muylaert, R. L., Niebuhr, B. B., Oliveira, A. A., Pereira, L. A., Prado, P. I., Stevens, R. D., Vancine, M. H., Ribeiro, M. C., Galetti, M., & Ovaskainen, O. (2020). Fragmented tropical forests lose mutualistic plant–animal interactions. Diversity and Distributions, 26(2), 154–168. https://doi.org/10.1111/ddi.13010
+
+McGarigal, K., Wan, H. Y., Zeller, K. A., Timm, B. C., & Cushman, S. A. (2016). Multi-scale habitat selection modeling: A review and outlook. Landscape Ecology, 31(6), 1161–1175.\\ https://doi.org/10.1007/s10980-016-0374-x
+
+Miguet, P., Fahrig, L., & Lavigne, C. (2017). How to quantify a distance‐dependent landscape effect on a biological response. Methods in Ecology and Evolution, 8(12), 1717–1724. \\
+https://doi.org/10.1111/2041-210X.12830
+
+Moraga, A. D., Martin, A. E., & Fahrig, L. (2019). The scale of effect of landscape context varies with the species’ response variable measured. Landscape Ecology, 34(4), 703–715. https://doi.org/10.1007/s10980-019-00808-9
+
+Nellemann, C., Vistnes, I., Jordhøy, P., Støen, O.-G., Kaltenborn, B. P., Hanssen, F., & Helgesen, R. (2010). Effects of recreational cabins, trails and their removal for restoration of reindeer winter ranges. Restoration Ecology, 18(6), 873–881. https://doi.org/10.1111/j.1526-100X.2009.00517.x
+
+Nellemann, C., Vistnes, I., Jordhøy, P., & Strand, O. (2001). Winter distribution of wild reindeer in relation to power lines, roads and resorts. Biological Conservation, 101(3), 351–360.\\ https://doi.org/10.1016/S0006-3207(01)00082-9
+
+Newbold, T., Hudson, L. N., Hill, S. L. L., Contu, S., Lysenko, I., Senior, R. A., Börger, L., Bennett, D. J., Choimes, A., Collen, B., Day, J., De Palma, A., Díaz, S., Echeverria-Londoño, S., Edgar, M. J., Feldman, A., Garon, M., Harrison, M. L. K., Alhusseini, T., … Purvis, A. (2015). Global effects of land use on local terrestrial biodiversity. Nature, 520(7545), 45–50. https://doi.org/10.1038/nature14324
+
+Niebuhr, B. B., Panzacchi, M., & Van Moorter, B. (2023). Oneimpact package version 0.1.1: Tools for the assessment of the cumulative impacts of anthropogenic features in ecological studies (0.1.1) [R package]. Zenodo. https://doi.org/10.5281/zenodo.7888674
+
+Northrup, J. M., Vander Wal, E., Bonar, M., Fieberg, J., Laforge, M. P., Leclerc, M., Prokopenko, C. M., & Gerber, B. D. (2022). Conceptual and methodological advances in habitat‐selection modeling: Guidelines for ecology and evolution. Ecological Applications, 32(1). https://doi.org/10.1002/eap.2470
+
+Panzacchi, M., Van Moorter, B., Jordhøy, P., & Strand, O. (2013). Learning from the past to predict the future: Using archaeological findings and GPS data to quantify reindeer sensitivity to anthropogenic disturbance in Norway. Landscape Ecology, 28(5), 847–859. https://doi.org/10.1007/s10980-012-9793-5
+
+Panzacchi, M., van Moorter, B., Strand, O., Loe, L. E., & Reimers, E. (2015). Searching for the fundamental niche using individual-based habitat selection modelling across populations. Ecography, 38(7), 659–669. https://doi.org/10.1111/ecog.01075
+
+Panzacchi, M., Van Moorter, B., Strand, O., Saerens, M., Kivimäki, I., St. Clair, C. C., Herfindal, I., & Boitani, L. (2016). Predicting the continuum between corridors and barriers to animal movements using Step Selection Functions and Randomized Shortest Paths. Journal of Animal Ecology, 85(1), 32–42. https://doi.org/10.1111/1365-2656.12386
+
+Panzacchi, M., Van Moorter, B., & Niebuhr, B. B. (2022). Wild reindeer Maps. View Norwegian landscapes as reindeer do. WebApp: https://www.nina.no/Naturmangfold/Hjortedyr/reindeermapsnorway.
+
+Pichler, M., & Hartig, F. (2022). Machine learning and deep learning—A review for ecologists. Methods in Ecology and Evolution. https://doi.org/10.1111/2041-210X.14061
+
+Plante, S., Dussault, C., Richard, J. H., & Côté, S. D. (2018). Human disturbance effects and cumulative habitat loss in endangered migratory caribou. Biological Conservation, 224, 129–143. https://doi.org/10.1016/j.biocon.2018.05.022
+
+Polfus, J. L., Hebblewhite, M., & Heinemeyer, K. (2011). Identifying indirect habitat loss and avoidance of human infrastructure by northern mountain woodland caribou. Biological Conservation, 144(11), 2637–2646. https://doi.org/10.1016/j.biocon.2011.07.023
+
+R Core Team. (2020). R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing. https://www.R-project.org/
+
+Skarin, A., Sandström, P., & Alam, M. (2018). Out of sight of wind turbines-Reindeer response to wind farms in operation. Ecology and Evolution, 8(19), 9906–9919. https://doi.org/10.1002/ece3.4476
+
+Torres, A., Jaeger, J. A. G., & Alonso, J. C. (2016). Assessing large-scale wildlife responses to human infrastructure development. Proceedings of the National Academy of Sciences, 113(30), 8472–8477. https://doi.org/10.1073/pnas.1522488113
+
+Tucker, M. A., Böhning-Gaese, K., Fagan, W. F., Fryxell, J. M., Van Moorter, B., Alberts, S. C., Ali, A. H., Allen, A. M., Attias, N., Avgar, T., Bartlam-Brooks, H., Bayarbaatar, B., Belant, J. L., Bertassoni, A., Beyer, D., Bidner, L., van Beest, F. M., Blake, S., Blaum, N., … Mueller, T. (2018). Moving in the Anthropocene: Global reductions in terrestrial mammalian movements. Science, 359(6374), 466–469. https://doi.org/10.1126/science.aam9712
+
+Van Moorter, B., Kivimäki, I., Panzacchi, M., & Saerens, M. (2021). Defining and quantifying effective connectivity of landscapes for species’ movements. Ecography, 44(6), 870–884. https://doi.org/10.1111/ecog.05351
+
+Van Moorter, B., Kivimäki, I., Noack, A., Devooght, R., Panzacchi, M., Hall, K. R., Leleux, P., & Saerens, M. (2023). Accelerating advances in landscape connectivity modelling with the ConScape library. Methods in Ecology and Evolution, 14(1), 133–145. https://doi.org/10.1111/2041-210X.13850
+
+Van Moorter, B., Kivimäki, I., Panzacchi, M., Saura, S., Niebuhr, B. B., Strand, O., & Saerens, M. (In press). Habitat Functionality: Integrating environmental and geographic space in niche modelling for conservation planning. Ecology.
+
+Venter, O., Sanderson, E. W., Magrach, A., Allan, J. R., Beher, J., Jones, K. R., Possingham, H. P., Laurance, W. F., Wood, P., Fekete, B. M., Levy, M. A., & Watson, J. E. M. (2016). Sixteen years of change in the global terrestrial human footprint and implications for biodiversity conservation. Nature Communications, 7(1), 12558. https://doi.org/10.1038/ncomms12558
+
+Worton, B. J. (1989). Kernel Methods for Estimating the Utilization Distribution in Home-Range Studies. Ecology, 70(1), 164–168. https://doi.org/10.2307/1938423
+
+Zeller, K. A., Vickers, T. W., Ernest, H. B., & Boyce, W. M. (2017). Multi-level, multi-scale resource selection functions and resistance surfaces for conservation planning: Pumas as a case study. PLOS ONE, 12(6), e0179570. https://doi.org/10.1371/journal.pone.0179570
+
+
+\end{document}
